@@ -1,0 +1,25 @@
+{
+  "name": "functionl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "runMain": "tsx src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "fast-check": "^4.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@fp-ts/optic": "^0.25.0",
+    "fp-ts": "^2.16.9",
+    "io-ts": "^2.2.22",
+    "monocle-ts": "^2.3.13"
+  }
+}
