@@ -33,8 +33,10 @@ export const DateFromISOString = new t.Type<Date, string>(
 interface NonEmptyStringBrand {
   readonly NonEmptyString: unique symbol;
 }
+
 export type NonEmptyString = t.Branded<string, NonEmptyStringBrand>;
 interface NonEmptyStringC extends t.Type<NonEmptyString, string, unknown> {}
+
 export const NonEmptyString: NonEmptyStringC = t.brand(
   t.string,
   (s): s is NonEmptyString => s.length > 0,

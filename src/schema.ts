@@ -1,15 +1,18 @@
 import * as t from "io-ts";
+import * as G from 'io-ts/Guard'
+import * as S from 'io-ts/Schema'
+
 import {
   DateFromISOString,
   NonEmptyString,
   NumberFromString,
 } from "./utils/schema";
 
-const Status = t.union([
-  t.literal("todo"),
-  t.literal("in-progress"),
-  t.literal("done"),
-]);
+const Status = t.keyof({
+  todo: null,
+  ['in-progress']: null,
+  done: null,
+});
 
 export const Task = t.type({
   id: NumberFromString,
