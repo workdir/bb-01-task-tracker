@@ -1,6 +1,4 @@
 import * as t from "io-ts";
-import * as G from 'io-ts/Guard'
-import * as S from 'io-ts/Schema'
 
 import {
   DateFromISOString,
@@ -14,6 +12,8 @@ const Status = t.keyof({
   done: null,
 });
 
+export type Status = t.TypeOf<typeof Status>
+
 export const Task = t.type({
   id: NumberFromString,
   description: NonEmptyString,
@@ -21,6 +21,10 @@ export const Task = t.type({
   createdAt: DateFromISOString,
   updatedAt: DateFromISOString,
 });
+
+const Tasks = t.array(Task)
+export const decodeTasks = Tasks.decode
+export const encodeTasks = Tasks.encode
 
 export type Task = t.TypeOf<typeof Task>;
 
