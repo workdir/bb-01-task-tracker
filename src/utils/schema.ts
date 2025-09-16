@@ -1,44 +1,36 @@
 import * as t from "io-ts";
-import * as Either from "fp-ts/Either";
+import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 
-export const NumberFromString = new t.Type<number, string>(
-  "NumberFromString",
-  t.number.is,
-  (u, c) =>
-    pipe(
-      t.string.validate(u, c),
-      Either.flatMap((s) => {
-        const n = +s;
-        return isNaN(n) || s.trim() === "" ? t.failure(u, c) : t.success(n);
-      })
-    ),
-  String
-);
-
-export const DateFromISOString = new t.Type<Date, string>(
-  "DateFromIOSString",
-  (u): u is Date => u instanceof Date,
-  (u, c) =>
-    pipe(
-      t.string.validate(u, c),
-      Either.flatMap((s) => {
-        const d = new Date(s);
-        return isNaN(d.getTime()) ? t.failure(u, c) : t.success(d);
-      })
-    ),
-  (a) => a.toISOString()
-);
-
-interface NonEmptyStringBrand {
-  readonly NonEmptyString: unique symbol;
+export interface TrimBrand {
+  readonly Trimmed: unique symbol;
 }
 
-export type NonEmptyString = t.Branded<string, NonEmptyStringBrand>;
-interface NonEmptyStringC extends t.Type<NonEmptyString, string, unknown> {}
+export type Trim = t.Branded<string, TrimBrand>
 
-export const NonEmptyString: NonEmptyStringC = t.brand(
-  t.string,
-  (s): s is NonEmptyString => s.length > 0,
-  "NonEmptyString"
-);
+export interface TrimC extends t.Type<Trim, string, unknown> {}
+
+export const Trim: TrimC = new t.Type<Trim, string, unknown>(
+  "Trim",
+  (input: unknown): input is Trim => typeof input === 'string',
+  (u, c) => pipe(
+    t.string.validate(u, c),
+    E.flatMap(s => {
+      const trimmed = s.trim();
+      return t.success(trimmed as Trim)
+    })
+  ),
+  String
+)
+
+export const withDefault = <C extends t.Mixed>(codec: C, defaultValue: t.TypeOf<C>) =>
+  new t.Type<t.TypeOf<C>, unknown>(
+    `withDefault(${codec.name}, ${defaultValue})`,
+    codec.is,
+    (input, context) =>
+      input === undefined || input === null
+        ? E.right(defaultValue)
+        : codec.validate(input, context),
+    codec.encode
+  );
+

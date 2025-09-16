@@ -10,8 +10,8 @@ import * as Eq from 'fp-ts/Eq'
 import * as N from 'fp-ts/number'
 import * as O from 'fp-ts/Option'
 import { ReaderResult } from './utils/types'
-import { Task, Env, decodeTasks, encodeTasks, Status } from "./schema";
-import { NonEmptyString } from './utils/schema'
+import { Task, Env, decodeTasks, encodeTasks, Status, Description } from "./schema";
+import { NonEmptyString } from 'io-ts-types'
 
 // Not to define it myself 
 export type Storage = ReaderResult<typeof FilesystemStorage>
@@ -59,7 +59,7 @@ export const FilesystemStorage = pipe(
 
     const semigroupTask = Semigroup.struct<Task>({
       id: Semigroup.last<number>(),
-      description: Semigroup.last<NonEmptyString>(),
+      description: Semigroup.last<Description>(),
       status: Semigroup.last<Status>(),
       createdAt: Semigroup.last<Date>(),
       updatedAt: Semigroup.last<Date>()
@@ -73,7 +73,13 @@ export const FilesystemStorage = pipe(
       )
     )
 
+    const eqTaskId = Eq.fromEquals<Task['id']>((x, y) => x === y)
+
+    const findMatching = (id: number) => flow(
+      A.findFirst<Task>(task => eqTaskId.equals(task.id, id)))
+
     return {
+
       getAll() {
 
         return pipe(
@@ -81,6 +87,13 @@ export const FilesystemStorage = pipe(
           TE.mapLeft(mergeToStorageError),
         )
 
+      },
+
+      getById(id: number) {
+        return pipe(
+          this.getAll(),
+          TE.map(findMatching(id))
+        )
       },
 
       add(task: Task) {
