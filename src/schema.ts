@@ -3,9 +3,13 @@ import {
   DateFromISOString,
   NonEmptyString,
   NumberFromString,
-  optionFromNullable
+  optionFromNullable,
 } from "io-ts-types";
 import { Trim } from './utils/schema'
+
+import { pipe } from 'fp-ts/function';
+import * as E from 'fp-ts/Either'
+import { PathReporter } from 'io-ts/PathReporter'
 
 export const TaskId = NumberFromString;
 export type TaskId = t.TypeOf<typeof TaskId>
@@ -40,6 +44,8 @@ export const encodeTasks = Tasks.encode
 
 export type Task = t.TypeOf<typeof Task>;
 
+export type InsertTask = Pick<Task, "description" | "status"> 
+
 const AddCommand = t.tuple([t.literal("add"), Description])
 const UpdateCommand = t.tuple([t.literal("update"), TaskId, Description])
 const DeleteCommand = t.tuple([t.literal("delete"), TaskId])
@@ -52,7 +58,7 @@ export const Commands =
     [
       AddCommand,
       UpdateCommand,
-      DeleteCommand,
+       DeleteCommand,
       ListCommand,
       MarkInProgressCommand,
       MarkDoneCommand

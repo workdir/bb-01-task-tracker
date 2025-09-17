@@ -10,7 +10,7 @@ import * as Eq from 'fp-ts/Eq'
 import * as N from 'fp-ts/number'
 import * as O from 'fp-ts/Option'
 import { ReaderResult } from './utils/types'
-import { Task, Env, decodeTasks, encodeTasks, Status, Description } from "./schema";
+import { Task, Env, decodeTasks, encodeTasks, Status, Description, InsertTask, TaskId } from "./schema";
 import { NonEmptyString } from 'io-ts-types'
 
 // Not to define it myself 
@@ -89,18 +89,32 @@ export const FilesystemStorage = pipe(
 
       },
 
-      getById(id: number) {
+      getById(id: TaskId) {
         return pipe(
           this.getAll(),
           TE.map(findMatching(id))
         )
       },
 
-      add(task: Task) {
+      add({ description, status }: InsertTask) {
 
         return pipe(
-          this.getAll(),
-          TE.map(A.append(task)),
+          TE.Do,
+          TE.bind('tasks', this.getAll),
+          TE.let('tasksSize', ({ tasks }) => A.size(tasks)),
+          TE.bindW('task', ({ tasksSize }) =>
+            pipe(Task.decode({
+              id: ++tasksSize,
+              description,
+              status,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            } satisfies Task),
+              TE.fromEither,
+              TE.mapLeft(mergeToStorageError)
+            )
+          ),
+          TE.map(({ tasks, task }) => A.append(task)(tasks)),
           TE.flatMap(writeTasks),
           TE.mapError((e) => new StorageError(e.message)),
         )

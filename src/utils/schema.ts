@@ -1,9 +1,9 @@
 import * as t from "io-ts";
 import * as E from "fp-ts/Either";
-import { pipe } from "fp-ts/function";
+import { pipe, identity } from "fp-ts/function";
 
 export interface TrimBrand {
-  readonly Trimmed: unique symbol;
+  readonly Trim: unique symbol;
 }
 
 export type Trim = t.Branded<string, TrimBrand>
@@ -12,15 +12,12 @@ export interface TrimC extends t.Type<Trim, string, unknown> {}
 
 export const Trim: TrimC = new t.Type<Trim, string, unknown>(
   "Trim",
-  (input: unknown): input is Trim => typeof input === 'string',
+  (input: unknown): input is Trim => t.string.is(input) && input.trim().length === input.length,
   (u, c) => pipe(
     t.string.validate(u, c),
-    E.flatMap(s => {
-      const trimmed = s.trim();
-      return t.success(trimmed as Trim)
-    })
+    E.map(s => s.trim() as Trim)
   ),
-  String
+  identity 
 )
 
 export const withDefault = <C extends t.Mixed>(codec: C, defaultValue: t.TypeOf<C>) =>
