@@ -7,15 +7,41 @@ import {
 } from "io-ts-types";
 import { Trim } from './utils/schema'
 
-import { pipe } from 'fp-ts/function';
+import { pipe, identity } from 'fp-ts/function';
 import * as E from 'fp-ts/Either'
-import { PathReporter } from 'io-ts/PathReporter'
 
-export const TaskId = NumberFromString;
-export type TaskId = t.TypeOf<typeof TaskId>
+export interface TaskIdBrand {
+  readonly TaskId: unique symbol;
+}
 
-export const Description = t.intersection([NonEmptyString, Trim], "Description")
-export type Description = t.TypeOf<typeof Description>
+export type TaskId = t.Branded<number, TaskIdBrand>
+
+export const TaskId = NumberFromString
+  .pipe(new t.Type<TaskId, number, unknown>(
+    "TaskId",
+    (input: unknown): input is TaskId => t.string.is(input),
+    (u, c) => pipe(
+      t.number.validate(u, c),
+      E.map(s => s as TaskId)
+    ),
+    identity
+  ))
+
+export interface DescriptionBrand {
+  readonly Description: unique symbol;
+}
+
+export type Description = t.Branded<string, DescriptionBrand>
+
+export const Description = new t.Type<Description, string, unknown>(
+  "Description",
+  (input: unknown): input is Description => Trim.is(input),
+  (u, c) => pipe(
+    Trim.validate(u, c),
+    E.map(d => (d as unknown) as Description)
+  ),
+  String
+)
 
 const Status = t.keyof({
   todo: null,
@@ -44,7 +70,7 @@ export const encodeTasks = Tasks.encode
 
 export type Task = t.TypeOf<typeof Task>;
 
-export type InsertTask = Pick<Task, "description" | "status"> 
+export type InsertTask = Pick<Task, "description" | "status">
 
 const AddCommand = t.tuple([t.literal("add"), Description])
 const UpdateCommand = t.tuple([t.literal("update"), TaskId, Description])
@@ -58,7 +84,7 @@ export const Commands =
     [
       AddCommand,
       UpdateCommand,
-       DeleteCommand,
+      DeleteCommand,
       ListCommand,
       MarkInProgressCommand,
       MarkDoneCommand

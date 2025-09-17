@@ -12,11 +12,11 @@ export const TaskTracker = pipe(
   RTE.Do,
   RTE.bind('storage', RTE.ask<Storage>),
   //RTE.bindW('presentation', RTE.ask<Presentation>),
-  RTE.map(({ storage, presentation }) => {
+  RTE.map(({ storage  }) => {
      return {
 
       add(description: Description) {
-          storage.add({ description, status: "todo" })
+          storage.insert({ description, status: "todo" })
       },
 
       delete(id: TaskId) {
@@ -27,7 +27,7 @@ export const TaskTracker = pipe(
          
       },
 
-      getAll() {
+      list() {
         storage.getAll()
       }
     }

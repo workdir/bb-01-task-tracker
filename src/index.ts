@@ -34,10 +34,10 @@ const application = pipe(
             taskTracker.update(x, { description: args[2] })
             break;
           case "delete":
-            taskTracker.delete(1)
+            taskTracker.delete(args[1])
             break;
           case "list":
-            taskTracker.getAll()
+            taskTracker.list()
             break;
           case "mark-in-progress":
             const rr = args[1]
@@ -61,6 +61,6 @@ pipe(
   ),
   ),
   TE.bindW('taskTracker', ({ storage }) => TaskTracker(storage)),
-  TE.flatMap(({taskTracker}) => application(taskTracker))
+  TE.map(({taskTracker}) => taskTracker)
 )
 

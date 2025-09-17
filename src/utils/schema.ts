@@ -15,19 +15,11 @@ export const Trim: TrimC = new t.Type<Trim, string, unknown>(
   (input: unknown): input is Trim => t.string.is(input) && input.trim().length === input.length,
   (u, c) => pipe(
     t.string.validate(u, c),
-    E.map(s => s.trim() as Trim)
+    E.flatMap(s => {
+      const trimmed = s.trim();
+      return trimmed.length ? t.success(trimmed as Trim) : t.failure(u, c)
+    })
   ),
   identity 
 )
-
-export const withDefault = <C extends t.Mixed>(codec: C, defaultValue: t.TypeOf<C>) =>
-  new t.Type<t.TypeOf<C>, unknown>(
-    `withDefault(${codec.name}, ${defaultValue})`,
-    codec.is,
-    (input, context) =>
-      input === undefined || input === null
-        ? E.right(defaultValue)
-        : codec.validate(input, context),
-    codec.encode
-  );
 

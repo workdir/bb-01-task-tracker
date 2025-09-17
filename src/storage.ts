@@ -96,7 +96,7 @@ export const FilesystemStorage = pipe(
         )
       },
 
-      add({ description, status }: InsertTask) {
+      insert({ description, status }: InsertTask) {
 
         return pipe(
           TE.Do,
