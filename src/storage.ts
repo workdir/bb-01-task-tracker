@@ -11,7 +11,6 @@ import * as N from 'fp-ts/number'
 import * as O from 'fp-ts/Option'
 import { ReaderResult } from './utils/types'
 import { Task, Env, decodeTasks, encodeTasks, Status, Description, InsertTask, TaskId } from "./schema";
-import { NonEmptyString } from 'io-ts-types'
 
 // Not to define it myself 
 export type Storage = ReaderResult<typeof FilesystemStorage>
@@ -46,19 +45,25 @@ export const FilesystemStorage = pipe(
           decodeTasks,
           TE.fromEither
         )
-      )
+      ),
+      TE.mapError(error => {
+        console.log(error)
+        return error
+      })
     )
 
     const eqTask = Eq.contramap((task: Task) => task.id)(N.Eq)
 
-    const dropMatching = (task: Task) => flow(
+    const eqTaskId = Eq.fromEquals<TaskId>((x, y) => x === y)
+
+    const dropMatching = (taskId: TaskId) => flow(
       A.filter<Task>(
-        (_task) => !eqTask.equals(task, _task)
+        (task) => !eqTaskId.equals(taskId, task.id)
       )
     )
 
     const semigroupTask = Semigroup.struct<Task>({
-      id: Semigroup.last<number>(),
+      id: Semigroup.last<TaskId>(),
       description: Semigroup.last<Description>(),
       status: Semigroup.last<Status>(),
       createdAt: Semigroup.last<Date>(),
@@ -73,15 +78,13 @@ export const FilesystemStorage = pipe(
       )
     )
 
-    const eqTaskId = Eq.fromEquals<Task['id']>((x, y) => x === y)
-
-    const findMatching = (id: number) => flow(
+    const findMatching = (id: TaskId) => flow(
       A.findFirst<Task>(task => eqTaskId.equals(task.id, id)))
 
     return {
 
       getAll() {
-
+        console.log(`it is working`)
         return pipe(
           readTasks,
           TE.mapLeft(mergeToStorageError),
@@ -96,47 +99,52 @@ export const FilesystemStorage = pipe(
         )
       },
 
-      insert({ description, status }: InsertTask) {
-
+      insert(description: Description) {
+        console.log('isert is working')  
         return pipe(
           TE.Do,
           TE.bind('tasks', this.getAll),
-          TE.let('tasksSize', ({ tasks }) => A.size(tasks)),
-          TE.bindW('task', ({ tasksSize }) =>
+          TE.let('taskId', ({ tasks }) => pipe(
+            A.last(tasks),
+            O.map(task => task.id+1),
+            O.getOrElse(() => 0)
+          )
+          ),
+          TE.bindW('task', ({ taskId }) =>
             pipe(Task.decode({
-              id: ++tasksSize,
+              id: taskId,
               description,
-              status,
+              status: "todo",
               createdAt: new Date(),
               updatedAt: new Date(),
-            } satisfies Task),
+            }),
               TE.fromEither,
-              TE.mapLeft(mergeToStorageError)
             )
           ),
           TE.map(({ tasks, task }) => A.append(task)(tasks)),
           TE.flatMap(writeTasks),
+          TE.mapLeft(mergeToStorageError),
           TE.mapError((e) => new StorageError(e.message)),
         )
 
       },
 
-      update(task: Task, updated: Task) {
+      update(task: Task, newTask: Task) {
 
         return pipe(
           this.getAll(),
-          TE.map(swapMatching(task, updated)),
+          TE.map(swapMatching(task, newTask)),
           TE.flatMap(writeTasks),
           TE.mapError((e) => new StorageError(e.message)),
         )
 
       },
 
-      delete(task: Task) {
+      delete(taskId: TaskId) {
 
         return pipe(
           this.getAll(),
-          TE.map(dropMatching(task)),
+          TE.map(dropMatching(taskId)),
           TE.flatMap(writeTasks),
           TE.mapError((e) => new StorageError(e.message)),
         )

@@ -11,6 +11,7 @@ import * as O from 'fp-ts/Option'
 import { PathReporter } from 'io-ts/PathReporter'
 import { Trim } from './utils/schema'
 import { NonEmptyString } from 'io-ts-types'
+import * as S from 'fp-ts/string'
 
 const application = pipe(
   RTE.Do,
@@ -18,20 +19,20 @@ const application = pipe(
     process.argv,
     A.dropLeft(2)
   )),
-  RTE.bind('taskTracker', () => TaskTracker),
-  RTE.map(({ args, taskTracker }) => {
-    pipe(
+  RTE.bind('taskTracker', RTE.ask<TaskTracker>),
+  RTE.flatMap(({ args, taskTracker }) => {
+    return pipe(
       Commands.decode(args),
-      E.map((args) => {
+      TE.fromEither,
+      TE.map((args) => {
         const [command] = args;
         switch (command) {
           case "add":
-            taskTracker.add(args[1])
+            console.log(`add works`)
+            const result = taskTracker.add(args[1])()
             break;
           case "update":
-            const x = args[1]
-            const y = args[2] 
-            taskTracker.update(x, { description: args[2] })
+            taskTracker.update(args[1], { description: args[2] })
             break;
           case "delete":
             taskTracker.delete(args[1])
@@ -40,20 +41,22 @@ const application = pipe(
             taskTracker.list()
             break;
           case "mark-in-progress":
-            const rr = args[1]
+            taskTracker.update(args[1], { status: "in-progress" })
             break;
           case "mark-done":
+            taskTracker.update(args[1], { status: "done" })
             break;
         }
       }),
+      RTE.fromTaskEither
     )
   })
 )
 
-pipe(
+const run = pipe(
   TE.Do,
   TE.bind('storage', () => pipe(
-    NonEmptyString.decode(''),
+    NonEmptyString.decode(`${process.cwd()}/tasks.json`),
     TE.fromEither,
     TE.flatMap(
       (tasksFilepath) => FilesystemStorage({ tasksFilepath })
@@ -61,6 +64,12 @@ pipe(
   ),
   ),
   TE.bindW('taskTracker', ({ storage }) => TaskTracker(storage)),
-  TE.map(({taskTracker}) => taskTracker)
+  TE.flatMap(({ taskTracker }) => application(taskTracker))
 )
 
+run()
+  .then(console.log)
+  .catch(console.error)
+  .finally(() => {
+    console.log('end of execusion')
+  })

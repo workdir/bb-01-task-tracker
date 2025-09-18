@@ -9,6 +9,7 @@ import { Trim } from './utils/schema'
 
 import { pipe, identity } from 'fp-ts/function';
 import * as E from 'fp-ts/Either'
+import { PathReporter } from 'io-ts/PathReporter'
 
 export interface TaskIdBrand {
   readonly TaskId: unique symbol;
@@ -49,14 +50,14 @@ const Status = t.keyof({
   done: null,
 });
 
-export type Status = t.TypeOf<typeof Status>
+export type Status = t.TypeOf<typeof Status> 
 
 export const Task = t.type({
-  id: TaskId,
-  description: Description,
+  id: TaskId, 
+  description: Description, 
   status: Status,
   createdAt: DateFromISOString,
-  updatedAt: DateFromISOString,
+  updatedAt: DateFromISOString
 });
 
 export const InsertTask = t.type({
