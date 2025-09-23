@@ -11,6 +11,9 @@ importers:
       '@fp-ts/optic':
         specifier: ^0.25.0
         version: 0.25.0(@effect/typeclass@0.27.5(effect@3.13.8))(effect@3.13.8)
+      '@herp-inc/environmen-ts':
+        specifier: ^0.5.0
+        version: 0.5.0(fp-ts@2.16.9)
       fp-ts:
         specifier: ^2.16.9
         version: 2.16.9
@@ -199,6 +202,11 @@ packages:
     peerDependencies:
       '@effect/typeclass': ^0.27.0
       effect: ^3.8.0
+
+  '@herp-inc/environmen-ts@0.5.0':
+    resolution: {integrity: sha512-j972oCfAtiNJdMFZCrb+YBixNIrfm2BakAKQ2T/GCKzxAdITS04qjSoJEaMfp4Tu/5gOmxEqTY6cM914/sui3g==}
+    peerDependencies:
+      fp-ts: ^2.11.0
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
@@ -714,6 +722,10 @@ snapshots:
     dependencies:
       '@effect/typeclass': 0.27.5(effect@3.13.8)
       effect: 3.13.8
+
+  '@herp-inc/environmen-ts@0.5.0(fp-ts@2.16.9)':
+    dependencies:
+      fp-ts: 2.16.9
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 

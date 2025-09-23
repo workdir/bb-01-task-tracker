@@ -5,10 +5,10 @@ import * as O from 'fp-ts/Option';
 import { pipe } from 'fp-ts/function';
 import * as RTE from 'fp-ts/ReaderTaskEither';
 
-import { TaskTracker } from './task-tracker';
-import { Filesystem } from './fs';
-import { Storage } from './storage';
-import { Task, TaskEncoded, Description, Status } from './schema';
+import { TaskTracker } from '@/task-tracker';
+import { Filesystem } from '@/fs';
+import { Storage } from '@/storage';
+import { Task, TaskEncoded, Description, Status } from '@/schema';
 
 // Mock data
 const mockTasks: TaskEncoded[] = [

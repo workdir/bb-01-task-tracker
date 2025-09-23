@@ -11,38 +11,42 @@ import * as N from 'fp-ts/number'
 import * as O from 'fp-ts/Option'
 import { ReaderResult } from './utils/types'
 import { Task, Env, decodeTasks, encodeTasks, Status, Description, InsertTask, TaskId } from "./schema";
+import { Config } from '@/config'
 
-// Not to define it myself 
-export type Storage = ReaderResult<typeof FilesystemStorage>
+export type Storage = { storage: ReaderResult<typeof FilesystemStorage> }
 
 class StorageError extends Error {
   _tag = "StorageError"
-  cause: unknown
-  constructor(message: string, cause: unknown) {
-    super(message);
-    this.cause = cause
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
   }
 }
 
 const mergeToStorageError = (error: Error | t.Errors) => {
   if (error instanceof Error) return new StorageError(error.message, error);
-  return new StorageError(error.map((v) => v.value).join(","), error);
+  return new StorageError(error.map((v) => v.value).join(","), { cause: error });
 };
 
 export const FilesystemStorage = pipe(
   RTE.Do,
-  RTE.bind('filesystem', RTE.ask<Filesystem>),
-  RTE.bindW('env', RTE.ask<Env>),
-  RTE.map(({ env, filesystem }) => {
+  RTE.bind('filesystem', flow(
+    RTE.ask<Filesystem>,
+    RTE.map(filesystem => filesystem.filesystem)
+  )),
+  RTE.bindW('config',
+    flow(RTE.ask<Config>,
+    RTE.map(config => config.config))
+  ),
+  RTE.map(({ config , filesystem }) => {
 
     const writeTasks = flow(
       encodeTasks,
       JSON.stringify,
-      (tasks) => filesystem.writeFile(env.tasksFilepath, tasks)
+      (tasks) => filesystem.writeFile(config.tasksFilepath, tasks)
     )
 
     const readTasks = pipe(
-      filesystem.readFile(env.tasksFilepath),
+      filesystem.readFile(config.tasksFilepath),
       TE.flatMap(
         flow(
           parseJson,
@@ -123,7 +127,7 @@ export const FilesystemStorage = pipe(
           TE.map(({ tasks, task }) => A.append(task)(tasks)),
           TE.flatMap(writeTasks),
           TE.mapLeft(mergeToStorageError),
-          TE.mapError((e) => new StorageError(e.message)),
+          TE.mapError((e) => new StorageError(e.message, { cause: e })),
         )
 
       },
@@ -134,7 +138,7 @@ export const FilesystemStorage = pipe(
           this.getAll(),
           TE.map(swapMatching(task, newTask)),
           TE.flatMap(writeTasks),
-          TE.mapError((e) => new StorageError(e.message)),
+          TE.mapError((e) => new StorageError(e.message, { cause: e })),
         )
 
       },
@@ -145,7 +149,7 @@ export const FilesystemStorage = pipe(
           this.getAll(),
           TE.map(dropMatching(taskId)),
           TE.flatMap(writeTasks),
-          TE.mapError((e) => new StorageError(e.message)),
+          TE.mapError((e) => new StorageError(e.message, { cause: e })),
         )
 
       }

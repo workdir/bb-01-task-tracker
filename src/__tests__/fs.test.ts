@@ -1,15 +1,18 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'node:fs/promises';
-import { Filesystem, FilesystemError } from './fs';
+import { Filesystem, FilesystemError } from '@/fs';
 import * as E from 'fp-ts/Either'
 import * as TE from 'fp-ts/TaskEither'
 import { pipe } from 'fp-ts/function'
-
 
 vi.mock("node:fs/promises", () => ({
   readFile: vi.fn(),
   writeFile: vi.fn(),
 }))
+
+beforeEach(() => {
+  vi.resetAllMocks();
+})
 
 describe("Filesystem", () => {
   describe('readFile', () => {
@@ -41,7 +44,8 @@ describe("Filesystem", () => {
       }
 
       expect(result.left).toBeInstanceOf(FilesystemError);
-      expect(fs.readFile).toHaveBeenCalledWith(filepath, 'utf-8') })
+      expect(fs.readFile).toHaveBeenCalledWith(filepath, 'utf-8')
+    })
   })
 
   describe('writeFile', () => {
@@ -56,7 +60,7 @@ describe("Filesystem", () => {
       expect(fs.writeFile).toHaveBeenCalledWith(filepath, filecontent, 'utf-8')
     })
 
-    it('should throw an error if file writing fails', async ()  => {
+    it('should throw an error if file writing fails', async () => {
       const filepath = 'tasks.json'
       const filecontent = '[]'
       const error = new Error('Permision denied')

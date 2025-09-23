@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { NonEmptyString } from 'io-ts-types';
 import * as fs from 'node:fs/promises';
-import { } from './storage'
-import { TaskEncoded } from './schema';
-import { Filesystem } from './fs'
-import { FilesystemStorage } from './storage'
+import { } from '@/storage'
+import { TaskEncoded } from '@/schema';
+import { Filesystem } from '@/fs'
+import { FilesystemStorage } from '@/storage'
 import * as TE from 'fp-ts/TaskEither'
 import { pipe } from 'fp-ts/function'
 import * as A from 'fp-ts/Array'
@@ -23,14 +23,18 @@ describe('FilesystemStorage', () => {
     id: '1',
   }]
 
-  const filesystem: Filesystem = {
-    readFile: (path: string) => TE.of(JSON.stringify(tasks)),
-    writeFile: (path: string, content: string) => TE.rightIO(() => {})
+  let filesystemContent =  JSON.stringify(tasks)
+
+  const mockFilesystem: Filesystem = {
+    readFile: (path: string) => TE.of(filesystemContent),
+    writeFile: (path: string, content: string) => TE.rightIO(() => {
+      filesystemContent = content;
+    })
   } 
 
   const config = { tasksFilepath: 'tasksFilepath' as NonEmptyString }
 
-  const filesystemStorage = FilesystemStorage({ ...filesystem, ...config })
+  const filesystemStorage = FilesystemStorage({ ...mockFilesystem, ...config })
 
   
   beforeAll(async () => {

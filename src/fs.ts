@@ -24,7 +24,7 @@ export const Filesystem = {
     )
 }
 
-export type Filesystem = typeof Filesystem;
+export type Filesystem = { filesystem: typeof Filesystem };
 
 
 
