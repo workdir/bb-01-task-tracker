@@ -1,7 +1,8 @@
 import * as TE from "fp-ts/TaskEither";
 import * as E from "fp-ts/Either";
 import * as fs from "node:fs/promises";
-import { flow } from 'fp-ts/function'
+import * as RTE from 'fp-ts/ReaderTaskEither'
+import { flow, pipe } from 'fp-ts/function'
 
 class FilesystemError extends Error {
   _tag = "FilesystemError"
@@ -10,14 +11,21 @@ class FilesystemError extends Error {
   }
 }
 
-export const readFile = (path: string) =>
-  TE.tryCatch(
-    () => fs.readFile(path, "utf-8"), 
-    flow(E.toError, (e) => new FilesystemError(e.message))
-  );
+export const Filesystem = {
+  readFile: (path: string) =>
+    TE.tryCatch(
+      () => fs.readFile(path, "utf-8"),
+      flow(E.toError, (e) => new FilesystemError(e.message))
+    ),
+  writeFile: (path: string, content: string) =>
+    TE.tryCatch(
+      () => fs.writeFile(path, content),
+      flow(E.toError, (e) => new FilesystemError(e.message))
+    )
+}
 
-export const writeFile = (path: string, content: string) =>
-  TE.tryCatch(
-    () => fs.writeFile(path, content),
-    flow(E.toError, (e) => new FilesystemError(e.message))
-  );
+export type Filesystem = typeof Filesystem;
+
+
+
+

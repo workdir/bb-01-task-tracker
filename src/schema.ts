@@ -60,6 +60,8 @@ export const Task = t.type({
   updatedAt: DateFromISOString
 });
 
+export type TaskEncoded = t.OutputOf<typeof Task>
+
 export const InsertTask = t.type({
   description: Task.props.description,
   status: Task.props.status

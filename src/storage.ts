@@ -3,7 +3,7 @@ import * as RTE from "fp-ts/ReaderTaskEither";
 import * as A from 'fp-ts/Array'
 import * as TE from "fp-ts/TaskEither";
 import { pipe, flow } from "fp-ts/function";
-import { readFile, writeFile } from "./fs";
+import { Filesystem  } from "./fs";
 import { parseJson } from "./utils/json";
 import * as Semigroup from 'fp-ts/Semigroup'
 import * as Eq from 'fp-ts/Eq'
@@ -17,28 +17,32 @@ export type Storage = ReaderResult<typeof FilesystemStorage>
 
 class StorageError extends Error {
   _tag = "StorageError"
-  constructor(message: string) {
+  cause: unknown
+  constructor(message: string, cause: unknown) {
     super(message);
+    this.cause = cause
   }
 }
 
 const mergeToStorageError = (error: Error | t.Errors) => {
-  if (error instanceof Error) return new StorageError(error.message);
-  return new StorageError(error.map((v) => v.value).join(","));
+  if (error instanceof Error) return new StorageError(error.message, error);
+  return new StorageError(error.map((v) => v.value).join(","), error);
 };
 
 export const FilesystemStorage = pipe(
-  RTE.ask<Env>(),
-  RTE.map(({ tasksFilepath }) => {
+  RTE.Do,
+  RTE.bind('filesystem', RTE.ask<Filesystem>),
+  RTE.bindW('env', RTE.ask<Env>),
+  RTE.map(({ env, filesystem }) => {
 
     const writeTasks = flow(
       encodeTasks,
       JSON.stringify,
-      (tasks) => writeFile(tasksFilepath, tasks)
+      (tasks) => filesystem.writeFile(env.tasksFilepath, tasks)
     )
 
     const readTasks = pipe(
-      readFile(tasksFilepath),
+      filesystem.readFile(env.tasksFilepath),
       TE.flatMap(
         flow(
           parseJson,
@@ -46,10 +50,6 @@ export const FilesystemStorage = pipe(
           TE.fromEither
         )
       ),
-      TE.mapError(error => {
-        console.log(error)
-        return error
-      })
     )
 
     const eqTask = Eq.contramap((task: Task) => task.id)(N.Eq)
@@ -84,7 +84,6 @@ export const FilesystemStorage = pipe(
     return {
 
       getAll() {
-        console.log(`it is working`)
         return pipe(
           readTasks,
           TE.mapLeft(mergeToStorageError),
