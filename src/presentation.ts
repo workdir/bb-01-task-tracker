@@ -1,12 +1,12 @@
-import * as t from "io-ts";
+import { flow, pipe } from "fp-ts/function";
+import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as TE from "fp-ts/TaskEither";
-import { pipe, flow } from "fp-ts/function";
+import * as t from "io-ts";
 import { readFile, writeFile } from "./fs";
+import { type Env, Task } from "./schema";
 import { parseJson } from "./utils/json";
-import * as O from "fp-ts/Option";
-import { ReaderResult } from "./utils/types";
-import { Task, Env } from "./schema";
+import type { ReaderResult } from "./utils/types";
 
 // Not to define it myself
 export type Presentation = ReaderResult<typeof ConsolePresentation>;

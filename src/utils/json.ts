@@ -1,6 +1,6 @@
-import * as Json from "fp-ts/Json";
 import * as E from "fp-ts/Either";
 import { flow } from "fp-ts/function";
+import * as Json from "fp-ts/Json";
 
 // Prevent Union types from flatteing, usefull for Reader usage.
 // e.g unknown | number will merge to unknown;

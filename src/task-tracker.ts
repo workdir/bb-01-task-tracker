@@ -1,13 +1,12 @@
-import { pipe, flow } from "fp-ts/function";
-import * as RTE from "fp-ts/ReaderTaskEither";
 import * as E from "fp-ts/Either";
-import * as TE from "fp-ts/TaskEither";
+import { flow, pipe } from "fp-ts/function";
 import * as O from "fp-ts/Option";
+import * as RTE from "fp-ts/ReaderTaskEither";
+import * as TE from "fp-ts/TaskEither";
 import { PathReporter } from "io-ts/PathReporter";
-
-import { Storage } from "./storage";
-import { ReaderResult } from "./utils/types";
-import { Task, Description, TaskId, Status } from "./schema";
+import { type Description, type Status, Task, type TaskId } from "./schema";
+import type { Storage } from "./storage";
+import type { ReaderResult } from "./utils/types";
 
 export type TaskTracker = ReaderResult<typeof TaskTracker>;
 

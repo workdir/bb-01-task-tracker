@@ -1,17 +1,17 @@
-import { pipe } from "fp-ts/function";
-import * as E from "fp-ts/Either";
-import { TaskTracker } from "./task-tracker";
-import { FilesystemStorage } from "./storage";
-import { ConsolePresentation } from "./presentation";
-import * as RTE from "fp-ts/ReaderTaskEither";
 import * as A from "fp-ts/Array";
-import { Commands } from "./schema";
-import * as TE from "fp-ts/TaskEither";
+import * as E from "fp-ts/Either";
+import { pipe } from "fp-ts/function";
 import * as O from "fp-ts/Option";
-import { PathReporter } from "io-ts/PathReporter";
-import { Trim } from "./utils/schema";
-import { NonEmptyString } from "io-ts-types";
+import * as RTE from "fp-ts/ReaderTaskEither";
 import * as S from "fp-ts/string";
+import * as TE from "fp-ts/TaskEither";
+import { PathReporter } from "io-ts/PathReporter";
+import { NonEmptyString } from "io-ts-types";
+import { ConsolePresentation } from "./presentation";
+import { Commands } from "./schema";
+import { FilesystemStorage } from "./storage";
+import { TaskTracker } from "./task-tracker";
+import { Trim } from "./utils/schema";
 
 const application = pipe(
   RTE.Do,
@@ -25,10 +25,11 @@ const application = pipe(
       TE.map((args) => {
         const [command] = args;
         switch (command) {
-          case "add":
+          case "add": {
             console.log(`add works`);
             const result = taskTracker.add(args[1])();
             break;
+          }
           case "update":
             taskTracker.update(args[1], { description: args[2] });
             break;

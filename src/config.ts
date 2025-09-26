@@ -1,15 +1,15 @@
 import {
-  optional,
-  string,
+  DecodeFailed,
   defaultTo,
   Environment,
-  VariableDecoder,
-  Variable,
-  DecodeFailed,
+  optional,
+  string,
+  type Variable,
+  type VariableDecoder,
 } from "@herp-inc/environmen-ts";
 import { pipe } from "fp-ts/function";
 import * as RE from "fp-ts/ReaderEither";
-import { EitherResult } from "./utils/types";
+import type { EitherResult } from "./utils/types";
 
 const jsonFileD: VariableDecoder<string> = pipe(
   RE.ask<Variable>(),

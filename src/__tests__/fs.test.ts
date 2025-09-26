@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as fs from "node:fs/promises";
-import { Filesystem, FilesystemError } from "@/fs";
 import * as E from "fp-ts/Either";
-import * as TE from "fp-ts/TaskEither";
 import { pipe } from "fp-ts/function";
+import * as TE from "fp-ts/TaskEither";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Filesystem, FilesystemError } from "@/fs";
 
 vi.mock("node:fs/promises", () => ({
   readFile: vi.fn(),

@@ -1,26 +1,26 @@
-import * as t from "io-ts";
-import * as RTE from "fp-ts/ReaderTaskEither";
 import * as A from "fp-ts/Array";
-import * as TE from "fp-ts/TaskEither";
-import { pipe, flow } from "fp-ts/function";
-import { Filesystem } from "./fs";
-import { parseJson } from "./utils/json";
-import * as Semigroup from "fp-ts/Semigroup";
 import * as Eq from "fp-ts/Eq";
+import { flow, pipe } from "fp-ts/function";
 import * as N from "fp-ts/number";
 import * as O from "fp-ts/Option";
-import { ReaderResult } from "./utils/types";
+import * as RTE from "fp-ts/ReaderTaskEither";
+import * as Semigroup from "fp-ts/Semigroup";
+import * as TE from "fp-ts/TaskEither";
+import type * as t from "io-ts";
+import type { Config } from "@/config";
+import type { Filesystem } from "./fs";
 import {
-  Task,
-  Env,
+  type Description,
   decodeTasks,
+  Env,
   encodeTasks,
-  Status,
-  Description,
   InsertTask,
-  TaskId,
+  type Status,
+  Task,
+  type TaskId,
 } from "./schema";
-import { Config } from "@/config";
+import { parseJson } from "./utils/json";
+import type { ReaderResult } from "./utils/types";
 
 export type Storage = { storage: ReaderResult<typeof FilesystemStorage> };
 

@@ -1,6 +1,6 @@
-import * as t from "io-ts";
 import * as E from "fp-ts/Either";
-import { pipe, identity } from "fp-ts/function";
+import { identity, pipe } from "fp-ts/function";
+import * as t from "io-ts";
 
 export interface TrimBrand {
   readonly Trim: unique symbol;

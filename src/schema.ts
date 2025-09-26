@@ -1,4 +1,7 @@
+import * as E from "fp-ts/Either";
+import { identity, pipe } from "fp-ts/function";
 import * as t from "io-ts";
+import { PathReporter } from "io-ts/PathReporter";
 import {
   DateFromISOString,
   NonEmptyString,
@@ -6,10 +9,6 @@ import {
   optionFromNullable,
 } from "io-ts-types";
 import { Trim } from "./utils/schema";
-
-import { pipe, identity } from "fp-ts/function";
-import * as E from "fp-ts/Either";
-import { PathReporter } from "io-ts/PathReporter";
 
 export interface TaskIdBrand {
   readonly TaskId: unique symbol;

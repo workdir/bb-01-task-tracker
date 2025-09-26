@@ -10,6 +10,7 @@
     "lint:write": "biome lint src/ --write",
     "format": "biome format src/",
     "format:write": "biome format src/ --write",
+    "biome:both": "biome check src/ --write"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
     "fast-check": "^4.0.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
   "dependencies": {

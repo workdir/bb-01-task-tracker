@@ -1,8 +1,8 @@
-import * as TE from "fp-ts/TaskEither";
-import * as E from "fp-ts/Either";
 import * as fs from "node:fs/promises";
-import * as RTE from "fp-ts/ReaderTaskEither";
+import * as E from "fp-ts/Either";
 import { flow, pipe } from "fp-ts/function";
+import * as RTE from "fp-ts/ReaderTaskEither";
+import * as TE from "fp-ts/TaskEither";
 
 export class FilesystemError extends Error {
   _tag = "FilesystemError";

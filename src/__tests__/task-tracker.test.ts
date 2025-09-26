@@ -1,14 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as E from "fp-ts/Either";
-import * as TE from "fp-ts/TaskEither";
-import * as O from "fp-ts/Option";
 import { pipe } from "fp-ts/function";
-import * as RTE from "fp-ts/ReaderTaskEither";
-
-import { TaskTracker } from "@/task-tracker";
-import { Filesystem } from "@/fs";
+import * as O from "fp-ts/Option";
+import type * as RTE from "fp-ts/ReaderTaskEither";
+import * as TE from "fp-ts/TaskEither";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Filesystem } from "@/fs";
+import { type Description, Status, Task, type TaskEncoded } from "@/schema";
 import { Storage } from "@/storage";
-import { Task, TaskEncoded, Description, Status } from "@/schema";
+import { TaskTracker } from "@/task-tracker";
 
 // Mock data
 const mockTasks: TaskEncoded[] = [
