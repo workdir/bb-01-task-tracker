@@ -8,5 +8,5 @@ import { flow } from "fp-ts/function";
 // typesafeJsonParsing
 export const parseJson = flow(
   Json.parse,
-  E.mapLeft((u) => new SyntaxError(String(u)))
+  E.mapLeft((u) => new SyntaxError(String(u))),
 );

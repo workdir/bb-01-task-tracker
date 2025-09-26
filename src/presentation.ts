@@ -1,19 +1,18 @@
-
 import * as t from "io-ts";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as TE from "fp-ts/TaskEither";
 import { pipe, flow } from "fp-ts/function";
 import { readFile, writeFile } from "./fs";
 import { parseJson } from "./utils/json";
-import * as O from 'fp-ts/Option'
-import  { ReaderResult } from './utils/types'
+import * as O from "fp-ts/Option";
+import { ReaderResult } from "./utils/types";
 import { Task, Env } from "./schema";
 
-// Not to define it myself 
-export type Presentation = ReaderResult<typeof ConsolePresentation> 
+// Not to define it myself
+export type Presentation = ReaderResult<typeof ConsolePresentation>;
 
 class StorageError extends Error {
-  _tag = "StorageError"
+  _tag = "StorageError";
   constructor(message: string) {
     super(message);
   }
@@ -35,15 +34,13 @@ export const ConsolePresentation = pipe(
         TE.flatMap(flow(parseJson, TE.fromEither)),
         TE.flatMap(flow(t.array(Task).decode, TE.fromEither)),
         TE.mapLeft(mergeToStorageError),
-      )
+      );
     },
     delete(id: number) {
       const x = pipe(
         this.getAll(),
-        TE.map(( tasks) =>
-          tasks
-        )
-      ) 
+        TE.map((tasks) => tasks),
+      );
     },
     add(task: Task) {
       return pipe(
@@ -53,10 +50,9 @@ export const ConsolePresentation = pipe(
           pipe(
             writeFile(env.tasksFilepath, JSON.stringify([...tasks, task])),
             TE.mapError((e) => new StorageError(e.message)),
-          )
-        )
-      )
-    }
-  })
-  ))
-
+          ),
+        ),
+      );
+    },
+  })),
+);
