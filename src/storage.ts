@@ -8,19 +8,17 @@ import * as Semigroup from "fp-ts/Semigroup";
 import * as TE from "fp-ts/TaskEither";
 import type * as t from "io-ts";
 import type { Config } from "@/config";
-import type { Filesystem } from "./fs";
+import type { Filesystem } from "@/fs";
 import {
   type Description,
   decodeTasks,
-  Env,
   encodeTasks,
-  InsertTask,
   type Status,
   Task,
   type TaskId,
-} from "./schema";
-import { parseJson } from "./utils/json";
-import type { ReaderResult } from "./utils/types";
+} from "@/schema";
+import { parseJson } from "@/utils/json";
+import type { ReaderResult } from "@/utils/types";
 
 export type Storage = { storage: ReaderResult<typeof FilesystemStorage> };
 
@@ -38,22 +36,20 @@ const mergeToStorageError = (error: Error | t.Errors) => {
   });
 };
 
+const askForFilesystem = flow(
+  RTE.ask<Filesystem>,
+  RTE.map((filesystem) => filesystem.filesystem),
+)
+
+const askForConfig = flow(
+  RTE.ask<Config>,
+  RTE.map((config) => config.config),
+)
+
 export const FilesystemStorage = pipe(
   RTE.Do,
-  RTE.bind(
-    "filesystem",
-    flow(
-      RTE.ask<Filesystem>,
-      RTE.map((filesystem) => filesystem.filesystem),
-    ),
-  ),
-  RTE.bindW(
-    "config",
-    flow(
-      RTE.ask<Config>,
-      RTE.map((config) => config.config),
-    ),
-  ),
+  RTE.bindW("filesystem", askForFilesystem),
+  RTE.bindW("config", askForConfig),
   RTE.map(({ config, filesystem }) => {
     const writeTasks = flow(encodeTasks, JSON.stringify, (tasks) =>
       filesystem.writeFile(config.tasksFilepath, tasks),
