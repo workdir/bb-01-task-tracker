@@ -1,6 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as E from "fp-ts/Either";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { pipe } from "fp-ts/function";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { Filesystem, FilesystemError } from "@/fs";
 
 vi.mock("node:fs/promises", () => ({
@@ -15,39 +16,37 @@ beforeEach(() => {
 describe("Filesystem", () => {
   describe("readFile", () => {
     // Arrange -> Act -> Assert
-    it("should read and return filecontent successfully", async () => {
+    test("Reads filecontent", async () => {
       const filepath = "tasks.json";
       const filecontent = "[]";
       vi.mocked(fs.readFile).mockResolvedValue(filecontent);
 
       const result = await Filesystem.readFile(filepath)();
 
-      if (E.isLeft(result)) {
-        throw new Error("Test arranged for a success but it fails");
-      }
-
-      expect(result.right).toBe(filecontent);
+      expect(result).toStrictEqual(E.right(filecontent));
       expect(fs.readFile).toHaveBeenCalledWith(filepath, "utf-8");
     });
 
-    it("should throw an error if file reading fails", async () => {
+    test("Throws FilesystemError", async () => {
       const filepath = "tasks.json";
       const error = new Error("file not found");
       vi.mocked(fs.readFile).mockRejectedValue(error);
 
       const result = await Filesystem.readFile(filepath)();
 
-      if (E.isRight(result)) {
-        throw new Error("Test arranged for a failure but it succeedes");
-      }
-
-      expect(result.left).toBeInstanceOf(FilesystemError);
+      expect(E.isLeft(result)).toBe(true);
+      pipe(
+        result,
+        E.mapLeft((e) => {
+          expect(e).toBeInstanceOf(FilesystemError);
+        }),
+      );
       expect(fs.readFile).toHaveBeenCalledWith(filepath, "utf-8");
     });
   });
 
   describe("writeFile", () => {
-    it("should write filecontent successfully", async () => {
+    test("Writes to filesystem", async () => {
       const filepath = "tasks.json";
       const filecontent = "[]";
       vi.mocked(fs.writeFile).mockResolvedValue();
@@ -58,7 +57,7 @@ describe("Filesystem", () => {
       expect(fs.writeFile).toHaveBeenCalledWith(filepath, filecontent, "utf-8");
     });
 
-    it("should throw an error if file writing fails", async () => {
+    test("Throws FilesystemError", async () => {
       const filepath = "tasks.json";
       const filecontent = "[]";
       const error = new Error("Permision denied");
@@ -66,10 +65,12 @@ describe("Filesystem", () => {
 
       const result = await Filesystem.writeFile(filepath, filecontent)();
 
-      if (E.isRight(result)) {
-        throw new Error("Test arranged for a failure but it succeedes");
-      }
-      expect(result.left).toBeInstanceOf(FilesystemError);
+      pipe(
+        result,
+        E.mapLeft((e) => {
+          expect(e).toBeInstanceOf(FilesystemError);
+        }),
+      );
       expect(fs.writeFile).toHaveBeenCalledWith(filepath, filecontent, "utf-8");
     });
   });
