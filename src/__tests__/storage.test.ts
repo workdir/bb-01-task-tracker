@@ -5,137 +5,100 @@ import { pipe } from "fp-ts/function";
 import * as O from "fp-ts/Option";
 import * as TE from "fp-ts/TaskEither";
 import type { NonEmptyString } from "io-ts-types";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, test } from "vitest";
 import type { Filesystem } from "@/fs";
-import type { TaskEncoded } from "@/schema";
-import { FilesystemStorage } from "@/storage";
-
-const testTasksFilepath = "test-tasks.json" as NonEmptyString;
+import { FilesystemError } from "@/fs";
+import type { TaskEncoded, Description, Task } from "@/schema";
+import { FilesystemStorage, Storage, StorageError } from "@/storage";
+import { Config } from '@/config'
+import * as RTE from 'fp-ts/ReaderTaskEither'
 
 describe("FilesystemStorage", () => {
-  let tasks: TaskEncoded[] = [
-    {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      description: "description",
-      status: "in-progress",
-      id: "1",
-    },
-  ];
+  const description = 'todo in this afternoon' as Description
 
-  let filesystemContent = JSON.stringify(tasks);
+  const askForStorage = pipe(
+      RTE.ask<Storage>(),
+      RTE.map(storage => storage.storage),
+    )
 
-  const mockFilesystem: Filesystem = {
-    readFile: (path: string) => TE.of(filesystemContent),
-    writeFile: (path: string, content: string) =>
-      TE.rightIO(() => {
-        filesystemContent = content;
-      }),
-  };
-
-  const config = { tasksFilepath: "tasksFilepath" as NonEmptyString };
-
-  const filesystemStorage = FilesystemStorage({ ...mockFilesystem, ...config });
-
-  beforeAll(async () => {
-    tasks = [
-      {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        description: "description",
-        status: "in-progress",
-        id: "1",
-      },
-    ];
-  });
-
-  afterAll(async () => {});
-
-  it("should get all tasks from the file", async () => {
-    const tasks = await pipe(
-      filesystemStorage,
-      TE.flatMap((filesystemStorage) => {
-        return filesystemStorage.getAll();
-      }),
-    )();
-
-    pipe(
-      tasks,
-      E.map((tasks) => {
-        console.log(tasks);
-        expect(tasks).lengthOf(1);
+  test("Insert task", async () => {
+    const result = await pipe(
+      TE.Do,
+      TE.bind('impl', () => InMemoryFilesystemStorage),
+      TE.flatMap(({ impl }) =>
         pipe(
-          tasks,
-          A.head,
-          O.map((task) => {
-            expect(1).toBe(3);
-            expect(task.id).toBe(2);
-          }),
-        );
-      }),
-      E.mapLeft((error) => {
-        console.dir(error.cause, { depth: null });
-      }),
-    );
-  });
+          askForStorage,
+          RTE.flatMap(storage =>
+            pipe(
+              storage.insert(description),
+              TE.flatMap(storage.getAll),
+              RTE.fromTaskEither
+            )
+          )
+        )({ storage: impl })
+      )
+    )()
+    if(E.isLeft(result)) {
+      console.log(result.left)
+    }
+    expect(E.isRight(result)).toBe(true)
 
-  it("should insert a new task", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
+    expect(pipe(
+      result,
+      E.map(task => task[0].description)
+    )).toStrictEqual(E.right(description))
+  })
 
-  it("should get a task by its id", async () => {
-    /**
-     * TODO: Implementation
-     */
+  test("Gets all tasks", async () => {
+    const tasks = pipe(
+      askForStorage,
+      RTE.flatMap(storage => storage.getAll)
+    )
   });
+});
 
-  it("should return an option none if task does not exist", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
 
-  it("should update an existing task", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
+const TASKS_FILEPATH = 'todos.json';
 
-  it("should not update a non-existent task", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
+const InMemoryConfig: Config = {
+  config: {
+    tasksFilepath: TASKS_FILEPATH
+  } 
+}
 
-  it("should delete an existing task", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
+const InMemoryFilesystem = () => {
+  const task: TaskEncoded = {
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    description: "description",
+    status: "in-progress",
+    id: "1",
+  }
+  const tasks: string[] = [JSON.stringify(task)]
 
-  it("should not delete a non-existent task", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
+  return ({ filesystem: {
+    readFile: (path: string) => 
+      pipe(
+        TE.of(JSON.stringify([tasks])),
+        TE.flatMap(
+          TE.fromPredicate(
+            () => path === TASKS_FILEPATH,
+            () => new FilesystemError('error')
+          ))
+      ),
+    writeFile: (path: string, content: string) => pipe(
+      TE.of(undefined),
+      TE.tapIO(() => () => tasks.push(content)),
+      TE.flatMap(
+        TE.fromPredicate(
+          () => path === TASKS_FILEPATH,
+          () => new FilesystemError('error')
+        ))
+    )
+  } } satisfies Filesystem)
+}
 
-  it("should create the tasks file if it does not exist on insert", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
-
-  it("should return a storage error if the file is not valid json", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
-
-  it("should return a storage error if the tasks are not valid", async () => {
-    /**
-     * TODO: Implementation
-     */
-  });
+const InMemoryFilesystemStorage = FilesystemStorage({
+  ...InMemoryConfig,
+  ...InMemoryFilesystem()
 });

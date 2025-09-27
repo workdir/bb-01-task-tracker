@@ -22,7 +22,7 @@ import type { ReaderResult } from "@/utils/types";
 
 export type Storage = { storage: ReaderResult<typeof FilesystemStorage> };
 
-class StorageError extends Error {
+export class StorageError extends Error {
   _tag = "StorageError";
   constructor(message: string, options?: ErrorOptions) {
     super(message, options);

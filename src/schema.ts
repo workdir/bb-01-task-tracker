@@ -77,7 +77,7 @@ export type Task = t.TypeOf<typeof Task>;
 
 export type InsertTask = Pick<Task, "description" | "status">;
 
-const AddCommand = t.tuple([t.literal("add"), earescription]);
+const AddCommand = t.tuple([t.literal("add"), Description]);
 const UpdateCommand = t.tuple([t.literal("update"), TaskId, Description]);
 const DeleteCommand = t.tuple([t.literal("delete"), TaskId]);
 const ListCommand = t.tuple([t.literal("list"), optionFromNullable(Status)]);
