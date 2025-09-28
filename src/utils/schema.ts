@@ -8,19 +8,15 @@ export interface TrimBrand {
 
 export type Trim = t.Branded<string, TrimBrand>;
 
-export interface TrimC extends t.Type<Trim, string, unknown> {}
+const unsafeTrim = (s: string): Trim => s as any;
 
-export const Trim: TrimC = new t.Type<Trim, string, unknown>(
+export const Trim = new t.Type<Trim, string, unknown>(
   "Trim",
-  (input: unknown): input is Trim =>
-    t.string.is(input) && input.trim().length === input.length,
+  (input: unknown): input is Trim => t.string.is(input),
   (u, c) =>
     pipe(
       t.string.validate(u, c),
-      E.flatMap((s) => {
-        const trimmed = s.trim();
-        return trimmed.length ? t.success(trimmed as Trim) : t.failure(u, c);
-      }),
+      E.flatMap((s) => t.success(unsafeTrim(s))),
     ),
   identity,
 );

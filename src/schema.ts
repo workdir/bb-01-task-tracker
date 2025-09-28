@@ -1,5 +1,5 @@
 import * as E from "fp-ts/Either";
-import { identity, pipe } from "fp-ts/function";
+import { pipe } from "fp-ts/function";
 import * as t from "io-ts";
 import { PathReporter } from "io-ts/PathReporter";
 import {
@@ -14,37 +14,46 @@ export interface TaskIdBrand {
   readonly TaskId: unique symbol;
 }
 
-export type TaskId = t.Branded<number, TaskIdBrand>;
-
-export const TaskId = NumberFromString.pipe(
-  new t.Type<TaskId, number, unknown>(
-    "TaskId",
-    (input: unknown): input is TaskId => t.string.is(input),
-    (u, c) =>
-      pipe(
-        t.number.validate(u, c),
-        E.map((s) => s as TaskId),
-      ),
-    identity,
-  ),
+const TaskId = t.brand(
+  t.number,
+  (n): n is t.Branded<number, TaskIdBrand> => t.number.is(n),
+  "TaskId",
 );
+
+export type TaskId = t.TypeOf<typeof TaskId>;
+export type TaskIdEncoded = t.OutputOf<typeof TaskId>;
+
+export const makeTaskId = (n: TaskIdEncoded) =>
+  pipe(
+    TaskId.decode(n),
+    E.getOrElseW((errors) => {
+      throw new Error(PathReporter.report(E.left(errors)).join(","));
+    }),
+  );
 
 export interface DescriptionBrand {
   readonly Description: unique symbol;
 }
 
-export type Description = t.Branded<string, DescriptionBrand>;
-
-export const Description = new t.Type<Description, string, unknown>(
+const DescriptionC = t.brand(
+  t.string,
+  (s): s is t.Branded<string, DescriptionBrand> => t.string.is(s),
   "Description",
-  (input: unknown): input is Description => Trim.is(input),
-  (u, c) =>
-    pipe(
-      Trim.validate(u, c),
-      E.map((d) => d as unknown as Description),
-    ),
-  String,
 );
+
+export const Description = t.intersection([Trim, NonEmptyString, DescriptionC]);
+
+export type Description = t.TypeOf<typeof Description>;
+
+export type DescriptionEncoded = t.OutputOf<typeof Description>;
+
+export const makeDescription = (n: DescriptionEncoded) =>
+  pipe(
+    Description.decode(n),
+    E.getOrElseW((errors) => {
+      throw new Error(PathReporter.report(E.left(errors)).join(","));
+    }),
+  );
 
 const Status = t.keyof({
   todo: null,
@@ -62,27 +71,32 @@ export const Task = t.type({
   updatedAt: DateFromISOString,
 });
 
+export type Task = t.TypeOf<typeof Task>;
 export type TaskEncoded = t.OutputOf<typeof Task>;
-
-export const InsertTask = t.type({
-  description: Task.props.description,
-  status: Task.props.status,
-});
 
 const Tasks = t.array(Task);
 export const decodeTasks = Tasks.decode;
 export const encodeTasks = Tasks.encode;
 
-export type Task = t.TypeOf<typeof Task>;
-
-export type InsertTask = Pick<Task, "description" | "status">;
-
 const AddCommand = t.tuple([t.literal("add"), Description]);
-const UpdateCommand = t.tuple([t.literal("update"), TaskId, Description]);
-const DeleteCommand = t.tuple([t.literal("delete"), TaskId]);
+const UpdateCommand = t.tuple([
+  t.literal("update"),
+  NumberFromString.pipe(TaskId),
+  Description,
+]);
+const DeleteCommand = t.tuple([
+  t.literal("delete"),
+  NumberFromString.pipe(TaskId),
+]);
 const ListCommand = t.tuple([t.literal("list"), optionFromNullable(Status)]);
-const MarkInProgressCommand = t.tuple([t.literal("mark-in-progress"), TaskId]);
-const MarkDoneCommand = t.tuple([t.literal("mark-done"), TaskId]);
+const MarkInProgressCommand = t.tuple([
+  t.literal("mark-in-progress"),
+  NumberFromString.pipe(TaskId),
+]);
+const MarkDoneCommand = t.tuple([
+  t.literal("mark-done"),
+  NumberFromString.pipe(TaskId),
+]);
 
 export const Commands = t.union([
   AddCommand,
@@ -94,9 +108,3 @@ export const Commands = t.union([
 ]);
 
 export type Commands = t.TypeOf<typeof Commands>;
-
-export const Env = t.type({
-  tasksFilepath: NonEmptyString,
-});
-
-export type Env = t.TypeOf<typeof Env>;

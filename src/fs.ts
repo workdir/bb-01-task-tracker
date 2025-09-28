@@ -3,7 +3,6 @@ import * as E from "fp-ts/Either";
 import { flow } from "fp-ts/function";
 import * as TE from "fp-ts/TaskEither";
 
-
 export class FilesystemError extends Error {
   _tag = "FilesystemError";
   constructor(message: string, options?: ErrorOptions) {

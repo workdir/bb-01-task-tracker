@@ -1,4 +1,5 @@
 import * as A from "fp-ts/Array";
+import * as E from "fp-ts/Either";
 import * as Eq from "fp-ts/Eq";
 import { flow, pipe } from "fp-ts/function";
 import * as N from "fp-ts/number";
@@ -7,6 +8,7 @@ import * as RTE from "fp-ts/ReaderTaskEither";
 import * as Semigroup from "fp-ts/Semigroup";
 import * as TE from "fp-ts/TaskEither";
 import type * as t from "io-ts";
+import { PathReporter } from "io-ts/PathReporter";
 import type { Config } from "@/config";
 import type { Filesystem } from "@/fs";
 import {
@@ -39,12 +41,12 @@ const mergeToStorageError = (error: Error | t.Errors) => {
 const askForFilesystem = flow(
   RTE.ask<Filesystem>,
   RTE.map((filesystem) => filesystem.filesystem),
-)
+);
 
 const askForConfig = flow(
   RTE.ask<Config>,
   RTE.map((config) => config.config),
-)
+);
 
 export const FilesystemStorage = pipe(
   RTE.Do,
@@ -57,7 +59,19 @@ export const FilesystemStorage = pipe(
 
     const readTasks = pipe(
       filesystem.readFile(config.tasksFilepath),
-      TE.flatMap(flow(parseJson, decodeTasks, TE.fromEither)),
+      TE.tapIO((filecontent) => () => {
+        console.log(filecontent);
+      }),
+      TE.flatMap(
+        flow(
+          parseJson,
+          decodeTasks,
+          E.map((e) => {
+            console.dir(e, { depth: null });
+          }),
+          TE.fromEither,
+        ),
+      ),
     );
 
     const eqTask = Eq.contramap((task: Task) => task.id)(N.Eq);
@@ -89,7 +103,13 @@ export const FilesystemStorage = pipe(
 
     return {
       getAll() {
-        return pipe(readTasks, TE.mapLeft(mergeToStorageError));
+        return pipe(
+          readTasks,
+          TE.mapLeft((e) => {
+            console.dir(e, { depth: null });
+            return mergeToStorageError(e);
+          }),
+        );
       },
 
       getById(id: TaskId) {
@@ -97,7 +117,6 @@ export const FilesystemStorage = pipe(
       },
 
       insert(description: Description) {
-        console.log("isert is working");
         return pipe(
           TE.Do,
           TE.bind("tasks", this.getAll),
