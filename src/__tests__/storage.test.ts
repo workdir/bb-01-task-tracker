@@ -12,7 +12,11 @@ import type { Filesystem } from "@/fs";
 import { FilesystemError } from "@/fs";
 import type { Description, Task, TaskEncoded } from "@/schema";
 import { makeDescription } from "@/schema";
-import { FilesystemStorage, type Storage, TaskRepositoryError } from "@/storage";
+import {
+  FilesystemStorage,
+  type Storage,
+  TaskRepositoryError,
+} from "@/storage";
 
 describe("FilesystemStorage", () => {
   const description = makeDescription("todo in this afternoon");

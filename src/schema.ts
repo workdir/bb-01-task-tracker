@@ -67,10 +67,10 @@ export type Status = t.TypeOf<typeof Status>;
 const Priority = t.keyof({
   low: null,
   medium: null,
-  high: null
-})
+  high: null,
+});
 
-export type Priority = t.TypeOf<typeof Priority>
+export type Priority = t.TypeOf<typeof Priority>;
 
 export const Task = t.type({
   id: TaskId,
@@ -99,17 +99,16 @@ export const encodeTasks = Tasks.encode;
 
 // Domain behaviour
 // maybe i need lenses
-// shouldn't it be in the TaskTracker instead of here? 
+// shouldn't it be in the TaskTracker instead of here?
 const changeStatus = (task: Task, status: Status): Task => {
   return makeTask({
-    id: 1, 
-    createdAt: '',
-    updatedAt: '',
-    description: '',
-    status: 'todo'
-  })
-}
-
+    id: 1,
+    createdAt: "",
+    updatedAt: "",
+    description: "",
+    status: "todo",
+  });
+};
 
 const AddCommand = t.tuple([t.literal("add"), Description]);
 const UpdateCommand = t.tuple([

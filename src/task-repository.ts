@@ -22,7 +22,9 @@ import {
 import { parseJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
 
-export type TaskRepository = { taskRepository: ReaderResult<typeof FilesystemTaskRepository> };
+export type TaskRepository = {
+  taskRepository: ReaderResult<typeof FilesystemTaskRepository>;
+};
 
 export class TaskRepositoryError extends Error {
   _tag = "TaskRepositoryError";
@@ -32,7 +34,8 @@ export class TaskRepositoryError extends Error {
 }
 
 const mergeToTaskRepositoryError = (error: Error | t.Errors) => {
-  if (error instanceof Error) return new TaskRepositoryError(error.message, error);
+  if (error instanceof Error)
+    return new TaskRepositoryError(error.message, error);
   return new TaskRepositoryError(error.map((v) => v.value).join(","), {
     cause: error,
   });
@@ -66,9 +69,9 @@ export const FilesystemTaskRepository = pipe(
         flow(
           parseJson,
           E.flatMap((tasks) => {
-            const validation = decodeTasks(tasks)
-            console.log(PathReporter.report(validation))
-            return validation
+            const validation = decodeTasks(tasks);
+            console.log(PathReporter.report(validation));
+            return validation;
           }),
           TE.fromEither,
         ),

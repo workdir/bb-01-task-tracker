@@ -1,4 +1,3 @@
-
 import * as A from "fp-ts/Array";
 import * as E from "fp-ts/Either";
 import * as Eq from "fp-ts/Eq";
@@ -17,13 +16,12 @@ import {
   decodeTasks,
   encodeTasks,
   type Status,
-  Task,
+  type Task,
   type TaskId,
 } from "@/schema";
+import type { TaskRepository } from "@/task-repository";
 import { parseJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
-import { TaskRepository } from '@/task-repository'
-
 
 export type TaskService = { taskRepository: ReaderResult<typeof TaskService> };
 
@@ -41,22 +39,22 @@ const askForTaskRepository = flow(
 
 const TaskService = pipe(
   RTE.Do,
-  RTE.bindW('taskRepository', askForTaskRepository),
+  RTE.bindW("taskRepository", askForTaskRepository),
   RTE.map(({ taskRepository }) => ({
     getAll: () => {
-      taskRepository.getAll()
+      taskRepository.getAll();
     },
     getById: (id: TaskId) => {
-      taskRepository.getById(id)
+      taskRepository.getById(id);
     },
     create: (description: Description) => {
-      taskRepository.create(description)
+      taskRepository.create(description);
     },
-    update: (task: Task, newTask: Task) => { 
-      taskRepository.update(task, newTask)
+    update: (task: Task, newTask: Task) => {
+      taskRepository.update(task, newTask);
     },
     delete: (taskId: TaskId) => {
-      taskRepository.delete(taskId)
-    }
-  }))
-)
+      taskRepository.delete(taskId);
+    },
+  })),
+);
