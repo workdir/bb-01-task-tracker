@@ -12,7 +12,7 @@ import type { Filesystem } from "@/fs";
 import { FilesystemError } from "@/fs";
 import type { Description, Task, TaskEncoded } from "@/schema";
 import { makeDescription } from "@/schema";
-import { FilesystemStorage, type Storage, StorageError } from "@/storage";
+import { FilesystemStorage, type Storage, TaskRepositoryError } from "@/storage";
 
 describe("FilesystemStorage", () => {
   const description = makeDescription("todo in this afternoon");
@@ -41,7 +41,6 @@ describe("FilesystemStorage", () => {
     )();
 
     if (E.isLeft(result)) {
-      console.dir(result.left, { depth: null });
     }
     expect(E.isRight(result)).toBe(true);
 

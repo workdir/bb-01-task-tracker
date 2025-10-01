@@ -22,18 +22,18 @@ import {
 import { parseJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
 
-export type Storage = { storage: ReaderResult<typeof FilesystemStorage> };
+export type TaskRepository = { taskRepository: ReaderResult<typeof FilesystemTaskRepository> };
 
-export class StorageError extends Error {
-  _tag = "StorageError";
+export class TaskRepositoryError extends Error {
+  _tag = "TaskRepositoryError";
   constructor(message: string, options?: ErrorOptions) {
     super(message, options);
   }
 }
 
-const mergeToStorageError = (error: Error | t.Errors) => {
-  if (error instanceof Error) return new StorageError(error.message, error);
-  return new StorageError(error.map((v) => v.value).join(","), {
+const mergeToTaskRepositoryError = (error: Error | t.Errors) => {
+  if (error instanceof Error) return new TaskRepositoryError(error.message, error);
+  return new TaskRepositoryError(error.map((v) => v.value).join(","), {
     cause: error,
   });
 };
@@ -48,7 +48,7 @@ const askForConfig = flow(
   RTE.map((config) => config.config),
 );
 
-export const FilesystemStorage = pipe(
+export const FilesystemTaskRepository = pipe(
   RTE.Do,
   RTE.bindW("filesystem", askForFilesystem),
   RTE.bindW("config", askForConfig),
@@ -65,9 +65,10 @@ export const FilesystemStorage = pipe(
       TE.flatMap(
         flow(
           parseJson,
-          decodeTasks,
-          E.map((e) => {
-            console.dir(e, { depth: null });
+          E.flatMap((tasks) => {
+            const validation = decodeTasks(tasks)
+            console.log(PathReporter.report(validation))
+            return validation
           }),
           TE.fromEither,
         ),
@@ -106,8 +107,7 @@ export const FilesystemStorage = pipe(
         return pipe(
           readTasks,
           TE.mapLeft((e) => {
-            console.dir(e, { depth: null });
-            return mergeToStorageError(e);
+            return mergeToTaskRepositoryError(e);
           }),
         );
       },
@@ -116,7 +116,7 @@ export const FilesystemStorage = pipe(
         return pipe(this.getAll(), TE.map(findMatching(id)));
       },
 
-      insert(description: Description) {
+      create(description: Description) {
         return pipe(
           TE.Do,
           TE.bind("tasks", this.getAll),
@@ -141,8 +141,8 @@ export const FilesystemStorage = pipe(
           ),
           TE.map(({ tasks, task }) => A.append(task)(tasks)),
           TE.flatMap(writeTasks),
-          TE.mapLeft(mergeToStorageError),
-          TE.mapError((e) => new StorageError(e.message, { cause: e })),
+          TE.mapLeft(mergeToTaskRepositoryError),
+          TE.mapError((e) => new TaskRepositoryError(e.message, { cause: e })),
         );
       },
 
@@ -151,7 +151,7 @@ export const FilesystemStorage = pipe(
           this.getAll(),
           TE.map(swapMatching(task, newTask)),
           TE.flatMap(writeTasks),
-          TE.mapError((e) => new StorageError(e.message, { cause: e })),
+          TE.mapError((e) => new TaskRepositoryError(e.message, { cause: e })),
         );
       },
 
@@ -160,7 +160,7 @@ export const FilesystemStorage = pipe(
           this.getAll(),
           TE.map(dropMatching(taskId)),
           TE.flatMap(writeTasks),
-          TE.mapError((e) => new StorageError(e.message, { cause: e })),
+          TE.mapError((e) => new TaskRepositoryError(e.message, { cause: e })),
         );
       },
     };

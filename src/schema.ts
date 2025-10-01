@@ -10,6 +10,7 @@ import {
 } from "io-ts-types";
 import { Trim } from "./utils/schema";
 
+// Domain data
 export interface TaskIdBrand {
   readonly TaskId: unique symbol;
 }
@@ -63,6 +64,14 @@ const Status = t.keyof({
 
 export type Status = t.TypeOf<typeof Status>;
 
+const Priority = t.keyof({
+  low: null,
+  medium: null,
+  high: null
+})
+
+export type Priority = t.TypeOf<typeof Priority>
+
 export const Task = t.type({
   id: TaskId,
   description: Description,
@@ -74,9 +83,33 @@ export const Task = t.type({
 export type Task = t.TypeOf<typeof Task>;
 export type TaskEncoded = t.OutputOf<typeof Task>;
 
+export const makeTask = (n: TaskEncoded) =>
+  pipe(
+    Task.decode(n),
+    E.getOrElseW((errors) => {
+      throw new Error(PathReporter.report(E.left(errors)).join(","));
+    }),
+  );
+
+// Domain data end
+
 const Tasks = t.array(Task);
 export const decodeTasks = Tasks.decode;
 export const encodeTasks = Tasks.encode;
+
+// Domain behaviour
+// maybe i need lenses
+// shouldn't it be in the TaskTracker instead of here? 
+const changeStatus = (task: Task, status: Status): Task => {
+  return makeTask({
+    id: 1, 
+    createdAt: '',
+    updatedAt: '',
+    description: '',
+    status: 'todo'
+  })
+}
+
 
 const AddCommand = t.tuple([t.literal("add"), Description]);
 const UpdateCommand = t.tuple([
