@@ -26,6 +26,8 @@ export type TaskRepository = {
   taskRepository: ReaderResult<typeof FilesystemTaskRepository>;
 };
 
+type Introspect = ReaderResult<typeof FilesystemTaskRepository>;
+
 export class TaskRepositoryError extends Error {
   _tag = "TaskRepositoryError";
   constructor(message: string, options?: ErrorOptions) {
@@ -38,7 +40,7 @@ const mergeToTaskRepositoryError = (error: Error | t.Errors) => {
     return new TaskRepositoryError(error.message, error);
   return new TaskRepositoryError(error.map((v) => v.value).join(","), {
     cause: error,
-  });
+ });
 };
 
 const askForFilesystem = flow(

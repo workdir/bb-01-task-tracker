@@ -7,8 +7,10 @@ import {
   NonEmptyString,
   NumberFromString,
   optionFromNullable,
+  date
 } from "io-ts-types";
 import { Trim } from "./utils/schema";
+
 
 // Domain data
 export interface TaskIdBrand {
@@ -76,8 +78,8 @@ export const Task = t.type({
   id: TaskId,
   description: Description,
   status: Status,
-  createdAt: DateFromISOString,
-  updatedAt: DateFromISOString,
+  createdAt: date,
+  updatedAt: date,
 });
 
 export type Task = t.TypeOf<typeof Task>;
@@ -102,11 +104,11 @@ export const encodeTasks = Tasks.encode;
 // shouldn't it be in the TaskTracker instead of here?
 const changeStatus = (task: Task, status: Status): Task => {
   return makeTask({
-    id: 1,
-    createdAt: "",
-    updatedAt: "",
-    description: "",
-    status: "todo",
+    id: task.id,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    description: task.description,
+    status: status,
   });
 };
 

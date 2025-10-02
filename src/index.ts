@@ -9,7 +9,7 @@ import { PathReporter } from "io-ts/PathReporter";
 import { NonEmptyString } from "io-ts-types";
 import { ConsolePresentation } from "./presentation";
 import { Commands } from "./schema";
-import { FilesystemStorage } from "./storage";
+import { FilesystemTaskRepository } from "./task-repository";
 import { TaskTracker } from "./task-tracker";
 import { Trim } from "./utils/schema";
 
@@ -54,11 +54,11 @@ const application = pipe(
 
 const run = pipe(
   TE.Do,
-  TE.bind("storage", () =>
+  TE.bind("filesystemTaskRepository", () =>
     pipe(
       NonEmptyString.decode(`${process.cwd()}/tasks.json`),
       TE.fromEither,
-      TE.flatMap((tasksFilepath) => FilesystemStorage({ tasksFilepath })),
+      TE.flatMap((tasksFilepath) => FilesystemTaskRepository({ tasksFilepath })),
     ),
   ),
   TE.bindW("taskTracker", ({ storage }) => TaskTracker(storage)),

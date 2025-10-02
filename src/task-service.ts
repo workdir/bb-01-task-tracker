@@ -25,6 +25,8 @@ import type { ReaderResult } from "@/utils/types";
 
 export type TaskService = { taskRepository: ReaderResult<typeof TaskService> };
 
+type Introspect = ReaderResult<typeof TaskService>
+
 export class TaskServiceError extends Error {
   _tag = "TaskServiceError";
   constructor(message: string, options?: ErrorOptions) {
@@ -42,19 +44,34 @@ const TaskService = pipe(
   RTE.bindW("taskRepository", askForTaskRepository),
   RTE.map(({ taskRepository }) => ({
     getAll: () => {
-      taskRepository.getAll();
+      return pipe(
+        taskRepository.getAll(), 
+        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+      );
     },
     getById: (id: TaskId) => {
-      taskRepository.getById(id);
+      return pipe(
+        taskRepository.getById(id),
+        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+      )
     },
     create: (description: Description) => {
-      taskRepository.create(description);
+      return pipe(
+        taskRepository.create(description),
+        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+      );
     },
     update: (task: Task, newTask: Task) => {
-      taskRepository.update(task, newTask);
+      pipe(
+        taskRepository.update(task, newTask),
+        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+      );
     },
     delete: (taskId: TaskId) => {
-      taskRepository.delete(taskId);
+      pipe(
+        taskRepository.delete(taskId),
+        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+      );
     },
   })),
 );
