@@ -5,7 +5,7 @@ import * as TE from "fp-ts/TaskEither";
 
 export class FilesystemError extends Error {
   _tag = "FilesystemError";
-  constructor(message: string, options?: ErrorOptions) {
+  constructor(message?: string, options?: ErrorOptions) {
     super(message, options);
   }
 }

@@ -15,6 +15,8 @@ export const TaskId = t.brand(
 export type TaskId = t.TypeOf<typeof TaskId>;
 export type TaskIdEncoded = t.OutputOf<typeof TaskId>;
 
+export const makeTaskId = unsafeMake(TaskId);
+
 export const Description = t.intersection([Trim, NonEmptyString]);
 export type Description = t.TypeOf<typeof Description>;
 

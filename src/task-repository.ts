@@ -99,10 +99,7 @@ export const FilesystemTaskRepository = pipe(
     const ensureFileWithDefault = <E>(error: E) =>
       pipe(
         error,
-        TE.fromPredicate(
-          (error) => error instanceof FilesystemError,
-          (error) => error,
-        ),
+        TE.fromPredicate((error) => error instanceof FilesystemError, identity),
         TE.flatMap(() =>
           pipe(
             TE.Do,
