@@ -6,7 +6,7 @@ import {
   DateFromISOString,
   NonEmptyString,
   NumberFromString,
-  optionFromNullable,
+ optionFromNullable,
   date
 } from "io-ts-types";
 import { Trim } from "./utils/schema";

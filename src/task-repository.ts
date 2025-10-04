@@ -1,7 +1,7 @@
 import * as A from "fp-ts/Array";
 import * as E from "fp-ts/Either";
 import * as Eq from "fp-ts/Eq";
-import { flow, pipe } from "fp-ts/function";
+import { flow, pipe, identity } from "fp-ts/function";
 import * as N from "fp-ts/number";
 import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
@@ -11,15 +11,17 @@ import type * as t from "io-ts";
 import { PathReporter } from "io-ts/PathReporter";
 import type { Config } from "@/config";
 import type { Filesystem } from "@/fs";
+import  {  FilesystemError } from "@/fs";
 import {
-  type Description,
-  decodeTasks,
-  encodeTasks,
-  type Status,
-  Task,
-  type TaskId,
+//  type Description,
+//  type Status,
+//  Task,
+//  type TaskId,
 } from "@/schema";
-import { parseJson } from "@/utils/json";
+import { Task, makeTasks, makeTask } from '@/schema.compound'
+import { TasksFromJson } from '@/schema.dto'
+import type { TaskId, Description, Status, Priority } from '@/schema.simple'
+import { encodeToJson, decodeFromJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
 
 export type TaskRepository = {
@@ -30,7 +32,7 @@ type Introspect = ReaderResult<typeof FilesystemTaskRepository>;
 
 export class TaskRepositoryError extends Error {
   _tag = "TaskRepositoryError";
-  constructor(message: string, options?: ErrorOptions) {
+  constructor(message = 'TaskRepositoryError default message', options?: ErrorOptions) {
     super(message, options);
   }
 }
@@ -40,7 +42,7 @@ const mergeToTaskRepositoryError = (error: Error | t.Errors) => {
     return new TaskRepositoryError(error.message, error);
   return new TaskRepositoryError(error.map((v) => v.value).join(","), {
     cause: error,
- });
+  });
 };
 
 const askForFilesystem = flow(
@@ -58,27 +60,26 @@ export const FilesystemTaskRepository = pipe(
   RTE.bindW("filesystem", askForFilesystem),
   RTE.bindW("config", askForConfig),
   RTE.map(({ config, filesystem }) => {
-    const writeTasks = flow(encodeTasks, JSON.stringify, (tasks) =>
-      filesystem.writeFile(config.tasksFilepath, tasks),
+
+    const writeTasks = flow(
+      encodeToJson(TasksFromJson),
+      TE.fromEither,
+      TE.flatMap(
+        (tasks) =>
+          filesystem.writeFile(config.tasksFilepath, tasks),
+      )
     );
 
     const readTasks = pipe(
       filesystem.readFile(config.tasksFilepath),
-      TE.tapIO((filecontent) => () => {
-        console.log(filecontent);
-      }),
       TE.flatMap(
         flow(
-          parseJson,
-          E.flatMap((tasks) => {
-            const validation = decodeTasks(tasks);
-            console.log(PathReporter.report(validation));
-            return validation;
-          }),
+          decodeFromJson(TasksFromJson),          
           TE.fromEither,
         ),
       ),
     );
+
 
     const eqTask = Eq.contramap((task: Task) => task.id)(N.Eq);
 
@@ -87,12 +88,14 @@ export const FilesystemTaskRepository = pipe(
     const dropMatching = (taskId: TaskId) =>
       flow(A.filter<Task>((task) => !eqTaskId.equals(taskId, task.id)));
 
+
     const semigroupTask = Semigroup.struct<Task>({
       id: Semigroup.last<TaskId>(),
       description: Semigroup.last<Description>(),
       status: Semigroup.last<Status>(),
+      priority: Semigroup.last<Priority>(),
       createdAt: Semigroup.last<Date>(),
-      updatedAt: Semigroup.last<Date>(),
+      updatedAt: Semigroup.last<O.Option<Date>>(),
     });
 
     const swapMatching = (task: Task, updated: Task) =>
@@ -107,14 +110,26 @@ export const FilesystemTaskRepository = pipe(
     const findMatching = (id: TaskId) =>
       flow(A.findFirst<Task>((task) => eqTaskId.equals(task.id, id)));
 
+    const ensureFileWithDefault = <E>(error: E) => pipe(
+      error,
+      TE.fromPredicate((error) => error instanceof FilesystemError, (error) => error),
+      TE.flatMap(() => pipe(
+        TE.Do,
+        TE.let('initTasks', () => makeTasks([])),
+        TE.flatMap(({ initTasks }) => pipe(
+          writeTasks(initTasks),
+          TE.as(initTasks)
+        ))
+      ))
+    )
+
     return {
       getAll() {
         return pipe(
           readTasks,
-          TE.mapLeft((e) => {
-            return mergeToTaskRepositoryError(e);
-          }),
-        );
+          TE.orElse(ensureFileWithDefault),
+          TE.mapLeft((e) => mergeToTaskRepositoryError(e)),
+        )
       },
 
       getById(id: TaskId) {
@@ -132,22 +147,19 @@ export const FilesystemTaskRepository = pipe(
               O.getOrElse(() => 0),
             ),
           ),
-          TE.bindW("task", ({ taskId }) =>
-            pipe(
-              Task.decode({
-                id: taskId,
-                description,
-                status: "todo",
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              }),
-              TE.fromEither,
-            ),
+          TE.let("task", ({ taskId: id }) =>
+            makeTask({
+              id,
+              description,
+              status: 'todo',
+              priority: 'low',
+              createdAt: new Date(),
+              updatedAt: O.none
+            }),
           ),
           TE.map(({ tasks, task }) => A.append(task)(tasks)),
           TE.flatMap(writeTasks),
           TE.mapLeft(mergeToTaskRepositoryError),
-          TE.mapError((e) => new TaskRepositoryError(e.message, { cause: e })),
         );
       },
 
@@ -156,7 +168,7 @@ export const FilesystemTaskRepository = pipe(
           this.getAll(),
           TE.map(swapMatching(task, newTask)),
           TE.flatMap(writeTasks),
-          TE.mapError((e) => new TaskRepositoryError(e.message, { cause: e })),
+          TE.mapLeft(mergeToTaskRepositoryError),
         );
       },
 
@@ -165,7 +177,7 @@ export const FilesystemTaskRepository = pipe(
           this.getAll(),
           TE.map(dropMatching(taskId)),
           TE.flatMap(writeTasks),
-          TE.mapError((e) => new TaskRepositoryError(e.message, { cause: e })),
+          TE.mapLeft(mergeToTaskRepositoryError),
         );
       },
     };

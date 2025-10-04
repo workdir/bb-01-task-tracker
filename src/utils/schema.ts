@@ -1,6 +1,7 @@
 import * as E from "fp-ts/Either";
 import { identity, pipe } from "fp-ts/function";
 import * as t from "io-ts";
+import { PathReporter } from 'io-ts/PathReporter'
 
 export interface TrimBrand {
   readonly Trim: unique symbol;
@@ -20,3 +21,13 @@ export const Trim = new t.Type<Trim, string, unknown>(
     ),
   identity,
 );
+
+
+export const unsafeMake = <C extends t.Mixed, E = t.OutputOf<C>, D = t.TypeOf<C>>(codec: C) => (encoded: E): D =>  
+  pipe(
+    codec.decode(encoded),
+    E.getOrElseW((errors) => {
+      throw new Error(PathReporter.report(E.left(errors)).join(","));
+    }),
+  );
+
