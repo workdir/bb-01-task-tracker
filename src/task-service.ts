@@ -25,7 +25,7 @@ import type { ReaderResult } from "@/utils/types";
 
 export type TaskService = { taskRepository: ReaderResult<typeof TaskService> };
 
-type Introspect = ReaderResult<typeof TaskService>
+type Introspect = ReaderResult<typeof TaskService>;
 
 export class TaskServiceError extends Error {
   _tag = "TaskServiceError";
@@ -45,32 +45,32 @@ const TaskService = pipe(
   RTE.map(({ taskRepository }) => ({
     getAll: () => {
       return pipe(
-        taskRepository.getAll(), 
-        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+        taskRepository.getAll(),
+        TE.mapLeft((e) => new TaskServiceError(e.message, { cause: e })),
       );
     },
     getById: (id: TaskId) => {
       return pipe(
         taskRepository.getById(id),
-        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
-      )
+        TE.mapLeft((e) => new TaskServiceError(e.message, { cause: e })),
+      );
     },
     create: (description: Description) => {
       return pipe(
         taskRepository.create(description),
-        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+        TE.mapLeft((e) => new TaskServiceError(e.message, { cause: e })),
       );
     },
     update: (task: Task, newTask: Task) => {
       pipe(
         taskRepository.update(task, newTask),
-        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+        TE.mapLeft((e) => new TaskServiceError(e.message, { cause: e })),
       );
     },
     delete: (taskId: TaskId) => {
       pipe(
         taskRepository.delete(taskId),
-        TE.mapLeft(e => new TaskServiceError(e.message, { cause: e }))
+        TE.mapLeft((e) => new TaskServiceError(e.message, { cause: e })),
       );
     },
   })),

@@ -4,13 +4,12 @@ import * as t from "io-ts";
 import { PathReporter } from "io-ts/PathReporter";
 import {
   DateFromISOString,
+  date,
   NonEmptyString,
   NumberFromString,
- optionFromNullable,
-  date
+  optionFromNullable,
 } from "io-ts-types";
 import { Trim } from "./utils/schema";
-
 
 // Domain data
 export interface TaskIdBrand {

@@ -58,7 +58,9 @@ const run = pipe(
     pipe(
       NonEmptyString.decode(`${process.cwd()}/tasks.json`),
       TE.fromEither,
-      TE.flatMap((tasksFilepath) => FilesystemTaskRepository({ tasksFilepath })),
+      TE.flatMap((tasksFilepath) =>
+        FilesystemTaskRepository({ tasksFilepath }),
+      ),
     ),
   ),
   TE.bindW("taskTracker", ({ storage }) => TaskTracker(storage)),
