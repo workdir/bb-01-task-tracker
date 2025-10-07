@@ -18,3 +18,4 @@ export type TaskFromJson = t.TypeOf<typeof TaskFromJson>;
 export type EncodedTaskFromJson = t.OutputOf<typeof TaskFromJson>;
 
 export const TasksFromJson = t.array(TaskFromJson);
+

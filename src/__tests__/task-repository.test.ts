@@ -11,8 +11,8 @@ import type { Config } from "@/config";
 import type { Filesystem } from "@/fs";
 import { FilesystemError } from "@/fs";
 import type { Task } from "@/schema.compound";
-import { makeTasks } from "@/schema.compound";
-import {} from "@/schema.dto";
+import { makeTasks, makeTask } from "@/schema.compound";
+import { TasksFromJson, TaskFromJson } from "@/schema.dto";
 import { makeDescription, makeTaskId } from "@/schema.simple";
 import type { TaskRepository } from "@/task-repository";
 import { FilesystemTaskRepository } from "@/task-repository";
@@ -25,7 +25,7 @@ describe("TaskRepository", () => {
     RTE.map((taskRepository) => taskRepository.taskRepository),
   );
 
-  test("Insert task", async () => {
+  test.only("Insert task", async () => {
     const result = await pipe(
       TE.Do,
       TE.bind("impl", () => InMemoryTaskRepository),
@@ -44,18 +44,21 @@ describe("TaskRepository", () => {
     )();
 
     if (E.isLeft(result)) {
+
     }
+    console.log(result)
     expect(E.isRight(result)).toBe(true);
 
+    expect(pipe(result, E.map(tasks => tasks.length))).toStrictEqual(E.right(2))
     expect(
       pipe(
         result,
-        E.map((task) => task[0].description),
+        E.map((task) => task[1].description),
       ),
     ).toStrictEqual(E.right(description));
   });
 
-  test.only("Gets all tasks", async () => {
+  test("Gets all tasks", async () => {
     const result = await pipe(
       TE.Do,
       TE.bind("impl", () => InMemoryTaskRepository),
@@ -73,7 +76,7 @@ describe("TaskRepository", () => {
       return;
     }
 
-    console.log(result.left.cause);
+    console.dir(result.left, { depth: null });
 
     //    expect(E.isLeft(result)).toBe(true)
     //expect(E.isRight(result)).toBe(true);
@@ -93,27 +96,33 @@ const InMemoryConfig: Config = {
 };
 
 const InMemoryFilesystem = () => {
-  const tasks = makeTasks([
-    {
+  const task =
+    TaskFromJson.encode(makeTask({
       id: makeTaskId(1),
       description: makeDescription("buy bitcoin"),
       priority: "high",
       status: "todo",
       createdAt: new Date(),
       updatedAt: O.none,
-    },
-  ]);
+    }))
 
-  let filecontent = JSON.stringify(tasks);
+  let filecontent = JSON.stringify(A.of(task)) 
 
   const updateFilecontent = (content: string) =>
     IO.of(() => {
-      filecontent = content;
+      console.log(`filecontentBefore`, filecontent)
+      filecontent = content
+      console.log(`filecontentAfter`, filecontent)
     });
+
+  const getFilecontent = () => {
+    console.log(`getting file content:`, filecontent)
+    return filecontent
+  }
 
   return {
     filesystem: {
-      readFile: (_: string) => TE.of(filecontent),
+      readFile: (_: string) => TE.of(getFilecontent()),
       writeFile: (_: string, content: string) =>
         pipe(TE.of(undefined), TE.tapIO(updateFilecontent(content))),
     },

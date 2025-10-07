@@ -1,17 +1,15 @@
 import * as A from "fp-ts/Array";
-import * as E from "fp-ts/Either";
 import * as Eq from "fp-ts/Eq";
-import { flow, identity, pipe } from "fp-ts/function";
+import {  flow, identity, pipe, apply } from "fp-ts/function";
 import * as N from "fp-ts/number";
 import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as Semigroup from "fp-ts/Semigroup";
 import * as TE from "fp-ts/TaskEither";
-import type * as t from "io-ts";
-import { PathReporter } from "io-ts/PathReporter";
 import type { Config } from "@/config";
 import type { Filesystem } from "@/fs";
 import { FilesystemError } from "@/fs";
+import { stringifyValidationErrors } from "@/PathReporter";
 import { makeTask, makeTasks, type Task } from "@/schema.compound";
 import { TasksFromJson } from "@/schema.dto";
 import type { Description, Priority, Status, TaskId } from "@/schema.simple";
@@ -33,14 +31,6 @@ export class TaskRepositoryError extends Error {
     super(message, options);
   }
 }
-
-const mergeToTaskRepositoryError = (error: Error | t.Errors) => {
-  if (error instanceof Error)
-    return new TaskRepositoryError(error.message, error);
-  return new TaskRepositoryError(error.map((v) => v.value).join(","), {
-    cause: error,
-  });
-};
 
 const askForFilesystem = flow(
   RTE.ask<Filesystem>,
@@ -96,27 +86,38 @@ export const FilesystemTaskRepository = pipe(
     const findMatching = (id: TaskId) =>
       flow(A.findFirst<Task>((task) => eqTaskId.equals(task.id, id)));
 
-    const ensureFileWithDefault = <E>(error: E) =>
-      pipe(
-        error,
-        TE.fromPredicate((error) => error instanceof FilesystemError, identity),
-        TE.flatMap(() =>
-          pipe(
-            TE.Do,
-            TE.let("initTasks", () => makeTasks([])),
-            TE.flatMap(({ initTasks }) =>
-              pipe(writeTasks(initTasks), TE.as(initTasks)),
-            ),
+    const ensureFileWithDefault = flow(
+      TE.fromPredicate(
+        <E>(error: E) => error instanceof FilesystemError,
+        identity,
+      ),
+      TE.flatMap(() =>
+        pipe(
+          TE.Do,
+          TE.let("initTasks", () => makeTasks([])),
+          TE.flatMap(({ initTasks }) =>
+            pipe(writeTasks(initTasks), TE.as(initTasks)),
           ),
         ),
-      );
+      ),
+    );
+
+    const getTaskId = flow(
+      A.last<Task>,
+      O.map((task) => task.id + 1),
+      O.getOrElse(() => 0),
+    );
 
     return {
       getAll() {
         return pipe(
           readTasks,
           TE.orElse(ensureFileWithDefault),
-          TE.mapLeft((e) => mergeToTaskRepositoryError(e)),
+          TE.mapLeft((error) => {
+            return Array.isArray(error)
+              ? new TaskRepositoryError(stringifyValidationErrors(error))
+              : new TaskRepositoryError(error.message, { cause: error });
+          }),
         );
       },
 
@@ -128,14 +129,9 @@ export const FilesystemTaskRepository = pipe(
         return pipe(
           TE.Do,
           TE.bind("tasks", this.getAll),
-          TE.let("taskId", ({ tasks }) =>
-            pipe(
-              A.last(tasks),
-              O.map((task) => task.id + 1),
-              O.getOrElse(() => 0),
-            ),
-          ),
+          TE.let("taskId", ({ tasks }) => getTaskId(tasks)),
           TE.let("task", ({ taskId: id }) =>
+            // has to be shorter, to versboe rigth now 
             makeTask({
               id,
               description,
@@ -145,9 +141,19 @@ export const FilesystemTaskRepository = pipe(
               updatedAt: O.none,
             }),
           ),
-          TE.map(({ tasks, task }) => A.append(task)(tasks)),
-          TE.flatMap(writeTasks),
-          TE.mapLeft(mergeToTaskRepositoryError),
+          TE.map(({ tasks, task }) => pipe(
+            A.append(task),
+            apply(tasks)
+          )),
+          TE.flatMap((x) => {
+            console.log('newTasks', x)
+            return writeTasks(x)
+          }),
+          TE.mapLeft((error) => {
+            return Array.isArray(error)
+              ? new TaskRepositoryError(stringifyValidationErrors(error))
+              : new TaskRepositoryError(error.message, { cause: error });
+          }),
         );
       },
 
@@ -156,7 +162,11 @@ export const FilesystemTaskRepository = pipe(
           this.getAll(),
           TE.map(swapMatching(task, newTask)),
           TE.flatMap(writeTasks),
-          TE.mapLeft(mergeToTaskRepositoryError),
+          TE.mapLeft((error) => {
+            return Array.isArray(error)
+              ? new TaskRepositoryError(stringifyValidationErrors(error))
+              : new TaskRepositoryError(error.message, { cause: error });
+          }),
         );
       },
 
@@ -165,7 +175,11 @@ export const FilesystemTaskRepository = pipe(
           this.getAll(),
           TE.map(dropMatching(taskId)),
           TE.flatMap(writeTasks),
-          TE.mapLeft(mergeToTaskRepositoryError),
+          TE.mapLeft((error) => {
+            return Array.isArray(error)
+              ? new TaskRepositoryError(stringifyValidationErrors(error))
+              : new TaskRepositoryError(error.message, { cause: error });
+          }),
         );
       },
     };
