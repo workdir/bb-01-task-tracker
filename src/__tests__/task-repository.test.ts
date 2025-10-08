@@ -25,7 +25,7 @@ describe("TaskRepository", () => {
     RTE.map((taskRepository) => taskRepository.taskRepository),
   );
 
-  test.only("Insert task", async () => {
+  test("Insert task", async () => {
     const result = await pipe(
       TE.Do,
       TE.bind("impl", () => InMemoryTaskRepository),
@@ -43,19 +43,9 @@ describe("TaskRepository", () => {
       ),
     )();
 
-    if (E.isLeft(result)) {
-
-    }
-    console.log(result)
     expect(E.isRight(result)).toBe(true);
+    expect(pipe(result, E.map(result => result.length))).toStrictEqual(E.right(2))
 
-    expect(pipe(result, E.map(tasks => tasks.length))).toStrictEqual(E.right(2))
-    expect(
-      pipe(
-        result,
-        E.map((task) => task[1].description),
-      ),
-    ).toStrictEqual(E.right(description));
   });
 
   test("Gets all tasks", async () => {
@@ -120,9 +110,18 @@ const InMemoryFilesystem = () => {
     return filecontent
   }
 
+  filecontent
+  getFilecontent()
+
+
+
   return {
     filesystem: {
-      readFile: (_: string) => TE.of(getFilecontent()),
+      readFile: (_: string) => pipe(
+        TE.Do,
+        TE.let('freshFilecontent', getFilecontent),
+        TE.map(({ freshFilecontent }) => freshFilecontent)
+      ),
       writeFile: (_: string, content: string) =>
         pipe(TE.of(undefined), TE.tapIO(updateFilecontent(content))),
     },

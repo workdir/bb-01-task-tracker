@@ -23,6 +23,9 @@ importers:
       io-ts-types:
         specifier: ^0.5.19
         version: 0.5.19(fp-ts@2.16.9)(io-ts@2.2.22(fp-ts@2.16.9))(monocle-ts@2.3.13(fp-ts@2.16.9))(newtype-ts@0.3.5(fp-ts@2.16.9)(monocle-ts@2.3.13(fp-ts@2.16.9)))
+      logging-ts:
+        specifier: ^0.3.4
+        version: 0.3.4(fp-ts@2.16.9)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.4
@@ -512,6 +515,11 @@ packages:
 
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
+
+  logging-ts@0.3.4:
+    resolution: {integrity: sha512-TJYaSB88h8N9/ojruoGZgJeQEwpLmDNWpGf03hDgjPNo5QnwO28vkSH/H8/9aMoX8zeShVJUOnKRM6zs5ifR0A==}
+    peerDependencies:
+      fp-ts: ^2.0.5
 
   loupe@3.2.1:
     resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
@@ -1059,6 +1067,10 @@ snapshots:
       fp-ts: 2.16.9
 
   js-tokens@9.0.1: {}
+
+  logging-ts@0.3.4(fp-ts@2.16.9):
+    dependencies:
+      fp-ts: 2.16.9
 
   loupe@3.2.1: {}
 
