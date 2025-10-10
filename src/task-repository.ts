@@ -15,12 +15,9 @@ import { TasksFromJson } from "@/schema.dto";
 import type { Description, Priority, Status, TaskId } from "@/schema.simple";
 import { decodeFromJson, encodeToJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
+import { Logger } from '@/logger'
 
-export type TaskRepository = {
-  taskRepository: ReaderResult<typeof FilesystemTaskRepository>;
-};
-
-type Introspect = ReaderResult<typeof FilesystemTaskRepository>;
+export type TaskRepository = ReaderResult<typeof FilesystemTaskRepository>;
 
 export class TaskRepositoryError extends Error {
   _tag = "TaskRepositoryError";
@@ -42,11 +39,23 @@ const askForConfig = flow(
   RTE.map((config) => config.config),
 );
 
+const askForLogger = flow(
+  RTE.ask<Logger>,
+  RTE.map((logger) => logger.logger),
+);
+
+
 export const FilesystemTaskRepository = pipe(
   RTE.Do,
   RTE.bindW("filesystem", askForFilesystem),
   RTE.bindW("config", askForConfig),
-  RTE.map(({ config, filesystem }) => {
+  RTE.bindW("logger", askForLogger),
+  RTE.map(({ config, filesystem, logger }) => {
+
+    const w = TE.tapIO(() => logger.info('message'))
+    const ww = TE.fromIO(logger.info('message'))
+    const www = TE.as(TE.fromIO(logger.info('message')))
+    
     const writeTasks = flow(
       encodeToJson(TasksFromJson),
       TE.fromEither,
@@ -184,4 +193,6 @@ export const FilesystemTaskRepository = pipe(
       },
     };
   }),
+  RTE.bindTo('taskRepository')
 );
+

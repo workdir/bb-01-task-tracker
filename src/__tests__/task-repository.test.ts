@@ -82,6 +82,7 @@ const TASKS_FILEPATH = "todos.json";
 const InMemoryConfig: Config = {
   config: {
     tasksFilepath: TASKS_FILEPATH,
+    logLevel: "debug"
   },
 };
 
