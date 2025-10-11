@@ -12,6 +12,13 @@ import * as t from "io-ts";
 import { PathReporter } from "io-ts/PathReporter";
 import { Description } from "@/schema.simple";
 
+export enum LogLevel {
+  Error,
+  Warn,
+  Info,
+  Debug,
+}
+
 const log = Console.log("log message");
 
 const x = pipe(
@@ -28,10 +35,15 @@ const User = t.type({
 
 const program = pipe(
   E.Do,
+  E.map(() => {
+    const logLevel = "Debug";
+    const entryLogLevel = LogLevel.Debug;
+    console.log(entryLogLevel === LogLevel[logLevel]);
+  }),
   E.let("validations", () =>
     User.decode({
       name: 1,
-      surname: "alles clar",
+      surname: "",
     }),
   ),
   E.map(({ validations }) => {

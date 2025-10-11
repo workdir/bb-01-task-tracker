@@ -11,8 +11,8 @@ import type { Config } from "@/config";
 import type { Filesystem } from "@/fs";
 import { FilesystemError } from "@/fs";
 import type { Task } from "@/schema.compound";
-import { makeTasks, makeTask } from "@/schema.compound";
-import { TasksFromJson, TaskFromJson } from "@/schema.dto";
+import { makeTask, makeTasks } from "@/schema.compound";
+import { TaskFromJson, TasksFromJson } from "@/schema.dto";
 import { makeDescription, makeTaskId } from "@/schema.simple";
 import type { TaskRepository } from "@/task-repository";
 import { FilesystemTaskRepository } from "@/task-repository";
@@ -44,8 +44,12 @@ describe("TaskRepository", () => {
     )();
 
     expect(E.isRight(result)).toBe(true);
-    expect(pipe(result, E.map(result => result.length))).toStrictEqual(E.right(2))
-
+    expect(
+      pipe(
+        result,
+        E.map((result) => result.length),
+      ),
+    ).toStrictEqual(E.right(2));
   });
 
   test("Gets all tasks", async () => {
@@ -82,47 +86,47 @@ const TASKS_FILEPATH = "todos.json";
 const InMemoryConfig: Config = {
   config: {
     tasksFilepath: TASKS_FILEPATH,
-    logLevel: "debug"
+    logLevel: "debug",
   },
 };
 
 const InMemoryFilesystem = () => {
-  const task =
-    TaskFromJson.encode(makeTask({
+  const task = TaskFromJson.encode(
+    makeTask({
       id: makeTaskId(1),
       description: makeDescription("buy bitcoin"),
       priority: "high",
       status: "todo",
       createdAt: new Date(),
       updatedAt: O.none,
-    }))
+    }),
+  );
 
-  let filecontent = JSON.stringify(A.of(task)) 
+  let filecontent = JSON.stringify(A.of(task));
 
   const updateFilecontent = (content: string) =>
     IO.of(() => {
-      console.log(`filecontentBefore`, filecontent)
-      filecontent = content
-      console.log(`filecontentAfter`, filecontent)
+      console.log(`filecontentBefore`, filecontent);
+      filecontent = content;
+      console.log(`filecontentAfter`, filecontent);
     });
 
   const getFilecontent = () => {
-    console.log(`getting file content:`, filecontent)
-    return filecontent
-  }
+    console.log(`getting file content:`, filecontent);
+    return filecontent;
+  };
 
-  filecontent
-  getFilecontent()
-
-
+  filecontent;
+  getFilecontent();
 
   return {
     filesystem: {
-      readFile: (_: string) => pipe(
-        TE.Do,
-        TE.let('freshFilecontent', getFilecontent),
-        TE.map(({ freshFilecontent }) => freshFilecontent)
-      ),
+      readFile: (_: string) =>
+        pipe(
+          TE.Do,
+          TE.let("freshFilecontent", getFilecontent),
+          TE.map(({ freshFilecontent }) => freshFilecontent),
+        ),
       writeFile: (_: string, content: string) =>
         pipe(TE.of(undefined), TE.tapIO(updateFilecontent(content))),
     },

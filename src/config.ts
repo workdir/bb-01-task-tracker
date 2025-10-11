@@ -2,17 +2,17 @@ import {
   DecodeFailed,
   defaultTo,
   Environment,
+  keyOf,
   optional,
   string,
-  keyOf,
   type Variable,
   type VariableDecoder,
 } from "@herp-inc/environmen-ts";
+import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 import * as RE from "fp-ts/ReaderEither";
+import type { LogLevelString } from "@/logger";
 import type { EitherResult } from "./utils/types";
-import type { Level as LogLevel } from '@/logger'
-import * as E from 'fp-ts/Either'
 
 const jsonFileD: VariableDecoder<string> = pipe(
   RE.ask<Variable>(),
@@ -37,15 +37,17 @@ const tasksFilepathD = pipe(
 
 const logLevelD = pipe(
   optional(
-    'LOG_LEVEL',
+    "LOG_LEVEL",
     keyOf({
-      debug: null,
-      info: null,
-      warning: null,
-      error: null,
+      ALL: null,
+      DEBUG: null,
+      INFO: null,
+      WARN: null,
+      ERROR: null,
+      NONE: null,
     }),
   ),
-  defaultTo<LogLevel>(() => 'info'),
+  defaultTo<LogLevelString>(() => "INFO"),
 );
 
 const configD = pipe(
@@ -56,6 +58,6 @@ const configD = pipe(
 
 const env = new Environment(process.env);
 
-export const config = pipe(configD(env), E.bindTo('config'));
+export const config = pipe(configD(env), E.bindTo("config"));
 
-export type Config = EitherResult<typeof config> 
+export type Config = EitherResult<typeof config>;

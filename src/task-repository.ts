@@ -1,6 +1,6 @@
 import * as A from "fp-ts/Array";
 import * as Eq from "fp-ts/Eq";
-import {  flow, identity, pipe, apply } from "fp-ts/function";
+import { apply, flow, identity, pipe } from "fp-ts/function";
 import * as N from "fp-ts/number";
 import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
@@ -9,13 +9,13 @@ import * as TE from "fp-ts/TaskEither";
 import type { Config } from "@/config";
 import type { Filesystem } from "@/fs";
 import { FilesystemError } from "@/fs";
+import type { Logger } from "@/logger";
 import { stringifyValidationErrors } from "@/PathReporter";
 import { makeTask, makeTasks, type Task } from "@/schema.compound";
 import { TasksFromJson } from "@/schema.dto";
 import type { Description, Priority, Status, TaskId } from "@/schema.simple";
 import { decodeFromJson, encodeToJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
-import { Logger } from '@/logger'
 
 export type TaskRepository = ReaderResult<typeof FilesystemTaskRepository>;
 
@@ -44,7 +44,6 @@ const askForLogger = flow(
   RTE.map((logger) => logger.logger),
 );
 
-
 export const FilesystemTaskRepository = pipe(
   RTE.Do,
   RTE.bindW("filesystem", askForFilesystem),
@@ -52,10 +51,6 @@ export const FilesystemTaskRepository = pipe(
   RTE.bindW("logger", askForLogger),
   RTE.map(({ config, filesystem, logger }) => {
 
-    const w = TE.tapIO(() => logger.info('message'))
-    const ww = TE.fromIO(logger.info('message'))
-    const www = TE.as(TE.fromIO(logger.info('message')))
-    
     const writeTasks = flow(
       encodeToJson(TasksFromJson),
       TE.fromEither,
@@ -140,7 +135,7 @@ export const FilesystemTaskRepository = pipe(
           TE.bind("tasks", this.getAll),
           TE.let("taskId", ({ tasks }) => getTaskId(tasks)),
           TE.let("task", ({ taskId: id }) =>
-            // has to be shorter, to versboe rigth now 
+            // has to be shorter, to versboe rigth now
             makeTask({
               id,
               description,
@@ -150,13 +145,10 @@ export const FilesystemTaskRepository = pipe(
               updatedAt: O.none,
             }),
           ),
-          TE.map(({ tasks, task }) => pipe(
-            A.append(task),
-            apply(tasks)
-          )),
+          TE.map(({ tasks, task }) => pipe(A.append(task), apply(tasks))),
           TE.flatMap((x) => {
-            console.log('newTasks', x)
-            return writeTasks(x)
+            console.log("newTasks", x);
+            return writeTasks(x);
           }),
           TE.mapLeft((error) => {
             return Array.isArray(error)
@@ -193,6 +185,5 @@ export const FilesystemTaskRepository = pipe(
       },
     };
   }),
-  RTE.bindTo('taskRepository')
+  RTE.bindTo("taskRepository"),
 );
-
