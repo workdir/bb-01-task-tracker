@@ -51,6 +51,13 @@ export const FilesystemTaskRepository = pipe(
   RTE.bindW("logger", askForLogger),
   RTE.map(({ config, filesystem, logger }) => {
 
+
+    const wt = (as: Array<Task>) => pipe(
+      TE.Do,
+      TE.tapIO(() => logger.debug('start writing tasks!')),
+      TE.flatMap(() => pipe(encodeToJson(TasksFromJson), apply(as), TE.fromEither)),
+    )
+
     const writeTasks = flow(
       encodeToJson(TasksFromJson),
       TE.fromEither,
