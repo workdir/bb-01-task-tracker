@@ -7,10 +7,7 @@ import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as TE from "fp-ts/TaskEither";
 import { afterAll, beforeAll, describe, expect, it, test } from "vitest";
-import type { Config } from "@/config";
 import type { Filesystem } from "@/fs";
-import { FilesystemError } from "@/fs";
-import type { Task } from "@/schema.compound";
 import { makeTask, makeTasks } from "@/schema.compound";
 import { TaskFromJson, TasksFromJson } from "@/schema.dto";
 import { makeDescription, makeTaskId } from "@/schema.simple";
@@ -39,17 +36,18 @@ describe("TaskRepository", () => {
               RTE.fromTaskEither,
             ),
           ),
-        )({ taskRepository: impl }),
+        )(impl),
       ),
     )();
 
     expect(E.isRight(result)).toBe(true);
-    expect(
-      pipe(
-        result,
-        E.map((result) => result.length),
-      ),
-    ).toStrictEqual(E.right(2));
+    pipe(
+      result,
+      E.map(tasks => {
+        expect(tasks.length).toBe(2)
+        expect(tasks[1].description).toBe(description)
+      })
+    )
   });
 
   test("Gets all tasks", async () => {
@@ -62,33 +60,21 @@ describe("TaskRepository", () => {
           RTE.flatMap((taskRepository) =>
             pipe(taskRepository.getAll(), RTE.fromTaskEither),
           ),
-        )({ taskRepository: impl }),
+        )(impl),
       ),
     )();
 
-    if (E.isRight(result)) {
-      return;
-    }
+    expect(E.isRight(result)).toBe(true)
 
-    console.dir(result.left, { depth: null });
-
-    //    expect(E.isLeft(result)).toBe(true)
-    //expect(E.isRight(result)).toBe(true);
-
-    //const length = pipe(result, E.map(t => t.length))
-
-    //expect(length).toStrictEqual(E.right(2));
+    pipe(
+      result,
+      E.map(tasks => {
+        expect(tasks.length).toBe(2)
+        expect(tasks[0].id).toBe(1)
+      })
+    )
   });
 });
-
-const TASKS_FILEPATH = "todos.json";
-
-const InMemoryConfig: Config = {
-  config: {
-    tasksFilepath: TASKS_FILEPATH,
-    logLevel: "debug",
-  },
-};
 
 const InMemoryFilesystem = () => {
   const task = TaskFromJson.encode(
@@ -104,20 +90,11 @@ const InMemoryFilesystem = () => {
 
   let filecontent = JSON.stringify(A.of(task));
 
-  const updateFilecontent = (content: string) =>
-    IO.of(() => {
-      console.log(`filecontentBefore`, filecontent);
-      filecontent = content;
-      console.log(`filecontentAfter`, filecontent);
-    });
+  const updateFilecontent = (content: string) => IO.of((filecontent = content));
 
   const getFilecontent = () => {
-    console.log(`getting file content:`, filecontent);
     return filecontent;
   };
-
-  filecontent;
-  getFilecontent();
 
   return {
     filesystem: {
@@ -128,12 +105,14 @@ const InMemoryFilesystem = () => {
           TE.map(({ freshFilecontent }) => freshFilecontent),
         ),
       writeFile: (_: string, content: string) =>
-        pipe(TE.of(undefined), TE.tapIO(updateFilecontent(content))),
+        pipe(
+          TE.of(undefined),
+          TE.tapIO(() => updateFilecontent(content)),
+        ),
     },
   } satisfies Filesystem;
 };
 
 const InMemoryTaskRepository = FilesystemTaskRepository({
-  ...InMemoryConfig,
   ...InMemoryFilesystem(),
 });

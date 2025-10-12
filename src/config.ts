@@ -8,7 +8,6 @@ import {
   type Variable,
   type VariableDecoder,
 } from "@herp-inc/environmen-ts";
-import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 import * as RE from "fp-ts/ReaderEither";
 import type { LogLevelString } from "@/logger";
@@ -58,6 +57,6 @@ const configD = pipe(
 
 const env = new Environment(process.env);
 
-export const config = pipe(configD(env), E.bindTo("config"));
+export const config = configD(env);
 
 export type Config = EitherResult<typeof config>;

@@ -6,10 +6,9 @@ import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as Semigroup from "fp-ts/Semigroup";
 import * as TE from "fp-ts/TaskEither";
-import type { Config } from "@/config";
+import { Default } from "@/default";
 import type { Filesystem } from "@/fs";
 import { FilesystemError } from "@/fs";
-import type { Logger } from "@/logger";
 import { stringifyValidationErrors } from "@/PathReporter";
 import { makeTask, makeTasks, type Task } from "@/schema.compound";
 import { TasksFromJson } from "@/schema.dto";
@@ -34,30 +33,11 @@ const askForFilesystem = flow(
   RTE.map((filesystem) => filesystem.filesystem),
 );
 
-const askForConfig = flow(
-  RTE.ask<Config>,
-  RTE.map((config) => config.config),
-);
-
-const askForLogger = flow(
-  RTE.ask<Logger>,
-  RTE.map((logger) => logger.logger),
-);
-
 export const FilesystemTaskRepository = pipe(
   RTE.Do,
+  RTE.bind("default", () => RTE.fromEither(Default)),
   RTE.bindW("filesystem", askForFilesystem),
-  RTE.bindW("config", askForConfig),
-  RTE.bindW("logger", askForLogger),
-  RTE.map(({ config, filesystem, logger }) => {
-
-
-    const wt = (as: Array<Task>) => pipe(
-      TE.Do,
-      TE.tapIO(() => logger.debug('start writing tasks!')),
-      TE.flatMap(() => pipe(encodeToJson(TasksFromJson), apply(as), TE.fromEither)),
-    )
-
+  RTE.map(({ default: { config, logger }, filesystem }) => {
     const writeTasks = flow(
       encodeToJson(TasksFromJson),
       TE.fromEither,
@@ -124,6 +104,7 @@ export const FilesystemTaskRepository = pipe(
         return pipe(
           readTasks,
           TE.orElse(ensureFileWithDefault),
+          TE.tapError((error) => pipe(logger.error(String(error)), TE.fromIO)),
           TE.mapLeft((error) => {
             return Array.isArray(error)
               ? new TaskRepositoryError(stringifyValidationErrors(error))
@@ -153,10 +134,7 @@ export const FilesystemTaskRepository = pipe(
             }),
           ),
           TE.map(({ tasks, task }) => pipe(A.append(task), apply(tasks))),
-          TE.flatMap((x) => {
-            console.log("newTasks", x);
-            return writeTasks(x);
-          }),
+          TE.flatMap(writeTasks),
           TE.mapLeft((error) => {
             return Array.isArray(error)
               ? new TaskRepositoryError(stringifyValidationErrors(error))

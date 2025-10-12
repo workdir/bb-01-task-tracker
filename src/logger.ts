@@ -1,8 +1,7 @@
 import * as Console from "fp-ts/Console";
 import { flow, pipe } from "fp-ts/function";
-import * as RTE from "fp-ts/ReaderTaskEither";
+import * as R from "fp-ts/Reader";
 import * as L from "logging-ts/lib/IO";
-import type { Config } from "@/config";
 import type { ReaderResult } from "@/utils/types";
 
 export enum LogLevel {
@@ -22,21 +21,15 @@ export interface Entry {
   level: LogLevel;
 }
 
-const askForConfig = flow(
-  RTE.ask<Config>,
-  RTE.map((config) => config.config),
-);
-
 export const Logger = pipe(
-  RTE.Do,
-  RTE.bind("config", askForConfig),
-  RTE.map(({ config }) => {
+  R.ask<LogLevelString>(),
+  R.map((logLevel) => {
     const showEntry = (entry: Entry) =>
       `[${entry.time.toISOString()}] ${LogLevel[entry.level].toUpperCase()}: ${entry.message}`;
 
     const logger = L.filter(
       flow(showEntry, Console.log),
-      (entry) => entry.level <= LogLevel[config.logLevel],
+      (entry) => entry.level <= LogLevel[logLevel],
     );
 
     const error = (message: string) =>
@@ -55,7 +48,6 @@ export const Logger = pipe(
       error,
     };
   }),
-  RTE.bindTo("logger"),
 );
 
 export type Logger = ReaderResult<typeof Logger>;
