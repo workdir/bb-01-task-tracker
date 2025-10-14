@@ -10,9 +10,9 @@ import { stringifyValidationErrors } from "@/PathReporter";
 import { makeTask, makeTasks, type Task } from "@/schema.compound";
 import { TasksFromJson } from "@/schema.dto";
 import type { Description, TaskId } from "@/schema.simple";
+import * as Alg from "@/task.algebra";
 import { decodeFromJson, encodeToJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
-import * as Alg from '@/task.algebra'
 
 export type TaskRepository = ReaderResult<typeof FilesystemTaskRepository>;
 
@@ -50,7 +50,8 @@ export const FilesystemTaskRepository = pipe(
     const ensureFileWithDefault = flow(
       TE.fromPredicate(
         // it has to check for file Not found errors, current condition does not reflect given requirement.
-        <E>(error: E) => error instanceof FilesystemError, identity,
+        <E>(error: E) => error instanceof FilesystemError,
+        identity,
       ),
       TE.flatMap(() =>
         pipe(
@@ -84,8 +85,7 @@ export const FilesystemTaskRepository = pipe(
       },
 
       getById(id: TaskId) {
-        return pipe(this.getAll(), TE.map(Alg.findById(id)
-        ));
+        return pipe(this.getAll(), TE.map(Alg.findById(id)));
       },
 
       create(description: Description) {
@@ -105,12 +105,7 @@ export const FilesystemTaskRepository = pipe(
             }),
           ),
           TE.flatMap(({ tasks, task }) =>
-            pipe(
-              A.append(task),
-              apply(tasks),
-              writeTasks,
-              TE.as(task)
-            )
+            pipe(A.append(task), apply(tasks), writeTasks, TE.as(task)),
           ),
           TE.mapLeft((error) => {
             return Array.isArray(error)
@@ -133,7 +128,6 @@ export const FilesystemTaskRepository = pipe(
         );
       },
 
-       
       delete(taskId: TaskId) {
         return pipe(
           this.getAll(),

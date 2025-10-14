@@ -28,6 +28,7 @@ import { Filesystem } from "@/fs";
 import { Logger } from "@/logger";
 import { makeTask, Task } from "@/schema.compound";
 import { Description, Priority, Status } from "@/schema.simple";
+import * as TE from 'fp-ts/TaskEither'
 
 interface Judge {
   name: string;
@@ -68,3 +69,7 @@ const findByName = (name: string) =>
 
 const s = A.getSemigroup<Judge>()
 
+const task = TE.of('buy a bitcoin')
+const optionTask = O.of(task)
+
+const as = O.sequence(TE.ApplicativeSeq)(optionTask)

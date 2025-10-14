@@ -1,23 +1,21 @@
 import * as fs from "node:fs/promises";
 import * as A from "fp-ts/Array";
 import * as E from "fp-ts/Either";
-import { pipe, flow } from "fp-ts/function";
+import { flow, pipe } from "fp-ts/function";
 import * as IO from "fp-ts/IO";
 import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as TE from "fp-ts/TaskEither";
 import {
-  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
   describe,
   expect,
-  it,
   test,
 } from "vitest";
 import type { Filesystem } from "@/fs";
-import { makeTask, makeTasks } from "@/schema.compound";
+import { makeTask } from "@/schema.compound";
 import { TaskFromJson, TasksFromJson } from "@/schema.dto";
 import { makeDescription, makeTaskId } from "@/schema.simple";
 import type { TaskRepository } from "@/task-repository";
@@ -187,7 +185,7 @@ describe("TaskRepository", () => {
       makeDescription("buy bitcoin"),
       makeDescription("buy solana"),
     ];
-    const updatedDescription = makeDescription('buy nvidia')
+    const updatedDescription = makeDescription("buy nvidia");
     const ids = [makeTaskId(1), makeTaskId(2)];
 
     beforeEach(() => {
@@ -263,19 +261,42 @@ describe("TaskRepository", () => {
             askForTaskRepository,
             RTE.flatMap((taskRepository) =>
               pipe(
-                taskRepository.getById(ids[1]), 
-                TE.map(flow(
-                  // how to make it TaskEither<Option<void>, Error> rahter than Option<TaskEither<void, Errro>
-                  O.map(
-                    task => taskRepository.update(task, { ...task, description: updatedDescription })),
-                )),
-                RTE.fromTaskEither
+                taskRepository.getById(ids[1]),
+                TE.flatMap(
+                  flow(
+                    O.map((task) => {
+                      const updates = {
+                        ...task,
+                        description: updatedDescription,
+                      };
+                      return pipe(
+                        taskRepository.update(task, updates),
+                        TE.as(updates),
+                      );
+                    }),
+                    O.sequence(TE.ApplicativeSeq)
+                  ),
+                ),
+                RTE.fromTaskEither,
               ),
             ),
           )(impl),
         ),
       )();
-    })
+
+      expect(E.isRight(result)).toBe(true) 
+      pipe(
+        result,
+        E.map(
+          task => {
+            expect(O.isSome(task)).toBe(true)
+            expect(pipe(task, O.map(task => {
+              expect(task.description).toBe(updatedDescription)
+            })))
+          }
+        )
+      )
+    });
   });
 });
 

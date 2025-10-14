@@ -1,12 +1,12 @@
-import * as N from "fp-ts/number";
-import * as S from "fp-ts/string";
-import * as D from "fp-ts/Date";
 import * as A from "fp-ts/Array";
+import * as D from "fp-ts/Date";
 import * as Eq from "fp-ts/Eq";
+import * as M from "fp-ts/Monoid";
+import * as N from "fp-ts/number";
+import * as O from "fp-ts/Option";
 import * as Ord from "fp-ts/Ord";
 import * as Sem from "fp-ts/Semigroup";
-import * as M from 'fp-ts/Monoid'
-import * as O from "fp-ts/Option";
+import * as S from "fp-ts/string";
 import type { Task } from "@/schema.compound";
 import type { Description, Priority, Status, TaskId } from "@/schema.simple";
 
@@ -77,8 +77,8 @@ const semigroupTask = Sem.struct<Task>({
 
 export const findById = (id: TaskId) =>
   A.findFirst<Task>((task) => task.id === id);
-export const deleteById = (id: TaskId) => A.filter<Task>(task => task.id !== id)
-export const update = semigroupTask.concat 
-export const replace = (match: Task, replacement: Task) => A.map<Task, Task>(task => task.id === match.id ? replacement : task);
-
-
+export const deleteById = (id: TaskId) =>
+  A.filter<Task>((task) => task.id !== id);
+export const update = semigroupTask.concat;
+export const replace = (match: Task, replacement: Task) =>
+  A.map<Task, Task>((task) => (task.id === match.id ? replacement : task));
