@@ -79,7 +79,8 @@ export const FilesystemTaskRepository = pipe(
 
     const ensureFileWithDefault = flow(
       TE.fromPredicate(
-        <E>(error: E) => error instanceof FilesystemError,
+        // it has to check for file Not found errors, current condition does not reflect given requirement.
+        <E>(error: E) => error instanceof FilesystemError && error.message.includes('NotFound'),
         identity,
       ),
       TE.flatMap(() =>
@@ -98,6 +99,12 @@ export const FilesystemTaskRepository = pipe(
       O.map((task) => task.id + 1),
       O.getOrElse(() => 0),
     );
+
+    const riseTaskIdNotFound = (taskId: TaskId) => {
+      const x = flow(
+        A.findFirst<Task>((task) => eqTaskId.equals(taskId, task.id))
+      );
+    }
 
     return {
       getAll() {
@@ -156,6 +163,7 @@ export const FilesystemTaskRepository = pipe(
         );
       },
 
+       
       delete(taskId: TaskId) {
         return pipe(
           this.getAll(),
