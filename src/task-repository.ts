@@ -15,6 +15,7 @@ import { TasksFromJson } from "@/schema.dto";
 import type { Description, Priority, Status, TaskId } from "@/schema.simple";
 import { decodeFromJson, encodeToJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
+import * as Alg from '@/task.algebra'
 
 export type TaskRepository = ReaderResult<typeof FilesystemTaskRepository>;
 
@@ -49,39 +50,10 @@ export const FilesystemTaskRepository = pipe(
       TE.flatMap(flow(decodeFromJson(TasksFromJson), TE.fromEither)),
     );
 
-    const eqTask = Eq.contramap((task: Task) => task.id)(N.Eq);
-
-    const eqTaskId = Eq.fromEquals<TaskId>((x, y) => x === y);
-
-    const dropMatching = (taskId: TaskId) =>
-      flow(A.filter<Task>((task) => !eqTaskId.equals(taskId, task.id)));
-
-    const semigroupTask = Semigroup.struct<Task>({
-      id: Semigroup.last<TaskId>(),
-      description: Semigroup.last<Description>(),
-      status: Semigroup.last<Status>(),
-      priority: Semigroup.last<Priority>(),
-      createdAt: Semigroup.last<Date>(),
-      updatedAt: Semigroup.last<O.Option<Date>>(),
-    });
-
-    const swapMatching = (task: Task, updated: Task) =>
-      flow(
-        A.map<Task, Task>((_task) =>
-          eqTask.equals(task, _task)
-            ? semigroupTask.concat(task, updated)
-            : _task,
-        ),
-      );
-
-    const findMatching = (id: TaskId) =>
-      flow(A.findFirst<Task>((task) => eqTaskId.equals(task.id, id)));
-
     const ensureFileWithDefault = flow(
       TE.fromPredicate(
         // it has to check for file Not found errors, current condition does not reflect given requirement.
-        <E>(error: E) => error instanceof FilesystemError && error.message.includes('NotFound'),
-        identity,
+        <E>(error: E) => error instanceof FilesystemError, identity,
       ),
       TE.flatMap(() =>
         pipe(
@@ -100,12 +72,6 @@ export const FilesystemTaskRepository = pipe(
       O.getOrElse(() => 0),
     );
 
-    const riseTaskIdNotFound = (taskId: TaskId) => {
-      const x = flow(
-        A.findFirst<Task>((task) => eqTaskId.equals(taskId, task.id))
-      );
-    }
-
     return {
       getAll() {
         return pipe(
@@ -121,7 +87,8 @@ export const FilesystemTaskRepository = pipe(
       },
 
       getById(id: TaskId) {
-        return pipe(this.getAll(), TE.map(findMatching(id)));
+        return pipe(this.getAll(), TE.map(Alg.findById(id)
+        ));
       },
 
       create(description: Description) {
@@ -150,10 +117,10 @@ export const FilesystemTaskRepository = pipe(
         );
       },
 
-      update(task: Task, newTask: Task) {
+      update(task: Task, updates: Task) {
         return pipe(
           this.getAll(),
-          TE.map(swapMatching(task, newTask)),
+          TE.map(Alg.replace(task, Alg.update(task, updates))),
           TE.flatMap(writeTasks),
           TE.mapLeft((error) => {
             return Array.isArray(error)
@@ -167,7 +134,7 @@ export const FilesystemTaskRepository = pipe(
       delete(taskId: TaskId) {
         return pipe(
           this.getAll(),
-          TE.map(dropMatching(taskId)),
+          TE.map(Alg.deleteById(taskId)),
           TE.flatMap(writeTasks),
           TE.mapLeft((error) => {
             return Array.isArray(error)

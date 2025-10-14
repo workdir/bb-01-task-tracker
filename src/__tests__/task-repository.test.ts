@@ -22,7 +22,7 @@ import { TaskFromJson, TasksFromJson } from "@/schema.dto";
 import { makeDescription, makeTaskId } from "@/schema.simple";
 import type { TaskRepository } from "@/task-repository";
 import { FilesystemTaskRepository } from "@/task-repository";
-import { parseJson } from '@/utils/json'
+import { parseJson } from "@/utils/json";
 
 describe("TaskRepository", () => {
   const askForTaskRepository = pipe(
@@ -169,14 +169,14 @@ describe("TaskRepository", () => {
       pipe(
         result,
         E.map((task) => {
-          expect(O.isSome(task)).toBe(true)
+          expect(O.isSome(task)).toBe(true);
           pipe(
             task,
-            O.map(task => {
-              expect(task.id).toBe(ids[1])
-              expect(task.description).toBe(descriptions[1])
-            })
-          )
+            O.map((task) => {
+              expect(task.id).toBe(ids[1]);
+              expect(task.description).toBe(descriptions[1]);
+            }),
+          );
         }),
       );
     });
@@ -209,8 +209,8 @@ describe("TaskRepository", () => {
       );
     });
 
-    test('Task Deletion', async () => {
-       const result = await pipe(
+    test("Task Deletion", async () => {
+      const result = await pipe(
         TE.Do,
         TE.bind("impl", () => InMemoryTaskRepository),
         TE.flatMap(({ impl }) =>
@@ -223,21 +223,21 @@ describe("TaskRepository", () => {
         ),
       )();
 
-      expect(E.isRight(result)).toBe(true); 
+      expect(E.isRight(result)).toBe(true);
 
       pipe(
         filecontent,
         parseJson,
         E.flatMap(TasksFromJson.decode),
-        E.map(tasks => {
-          expect(A.size(tasks)).toBe(1)
-          expect(tasks[0].description).toBe(descriptions[1])
+        E.map((tasks) => {
+          expect(A.size(tasks)).toBe(1);
+          expect(tasks[0].description).toBe(descriptions[1]);
         }),
-      )
-    })
+      );
+    });
 
-    test('Task Deletion over non existant Id', async () => {
-       const result = await pipe(
+    test("Task Deletion over non existant Id", async () => {
+      const result = await pipe(
         TE.Do,
         TE.bind("impl", () => InMemoryTaskRepository),
         TE.flatMap(({ impl }) =>
@@ -250,10 +250,9 @@ describe("TaskRepository", () => {
         ),
       )();
 
-      expect(E.isLeft(result)).toBe(true); 
-      
-    })
-  })
+      expect(E.isLeft(result)).toBe(true);
+    });
+  });
 });
 
 let filecontent = "[]";
