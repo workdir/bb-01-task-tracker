@@ -1,10 +1,7 @@
 import * as A from "fp-ts/Array";
-import * as Eq from "fp-ts/Eq";
 import { apply, flow, identity, pipe } from "fp-ts/function";
-import * as N from "fp-ts/number";
 import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
-import * as Semigroup from "fp-ts/Semigroup";
 import * as TE from "fp-ts/TaskEither";
 import { Default } from "@/default";
 import type { Filesystem } from "@/fs";
@@ -12,7 +9,7 @@ import { FilesystemError } from "@/fs";
 import { stringifyValidationErrors } from "@/PathReporter";
 import { makeTask, makeTasks, type Task } from "@/schema.compound";
 import { TasksFromJson } from "@/schema.dto";
-import type { Description, Priority, Status, TaskId } from "@/schema.simple";
+import type { Description, TaskId } from "@/schema.simple";
 import { decodeFromJson, encodeToJson } from "@/utils/json";
 import type { ReaderResult } from "@/utils/types";
 import * as Alg from '@/task.algebra'
@@ -107,8 +104,14 @@ export const FilesystemTaskRepository = pipe(
               updatedAt: O.none,
             }),
           ),
-          TE.map(({ tasks, task }) => pipe(A.append(task), apply(tasks))),
-          TE.flatMap(writeTasks),
+          TE.flatMap(({ tasks, task }) =>
+            pipe(
+              A.append(task),
+              apply(tasks),
+              writeTasks,
+              TE.as(task)
+            )
+          ),
           TE.mapLeft((error) => {
             return Array.isArray(error)
               ? new TaskRepositoryError(stringifyValidationErrors(error))

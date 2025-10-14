@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as A from "fp-ts/Array";
 import * as E from "fp-ts/Either";
-import { pipe } from "fp-ts/function";
+import { pipe, flow } from "fp-ts/function";
 import * as IO from "fp-ts/IO";
 import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
@@ -187,6 +187,7 @@ describe("TaskRepository", () => {
       makeDescription("buy bitcoin"),
       makeDescription("buy solana"),
     ];
+    const updatedDescription = makeDescription('buy nvidia')
     const ids = [makeTaskId(1), makeTaskId(2)];
 
     beforeEach(() => {
@@ -236,7 +237,7 @@ describe("TaskRepository", () => {
       );
     });
 
-    test("Task Deletion over non existant Id", async () => {
+    test("Task Deletion over non existant Id have no effect", async () => {
       const result = await pipe(
         TE.Do,
         TE.bind("impl", () => InMemoryTaskRepository),
@@ -250,8 +251,31 @@ describe("TaskRepository", () => {
         ),
       )();
 
-      expect(E.isLeft(result)).toBe(true);
+      expect(E.isRight(result)).toBe(true);
     });
+
+    test("Task Modification", async () => {
+      const result = await pipe(
+        TE.Do,
+        TE.bind("impl", () => InMemoryTaskRepository),
+        TE.flatMap(({ impl }) =>
+          pipe(
+            askForTaskRepository,
+            RTE.flatMap((taskRepository) =>
+              pipe(
+                taskRepository.getById(ids[1]), 
+                TE.map(flow(
+                  // how to make it TaskEither<Option<void>, Error> rahter than Option<TaskEither<void, Errro>
+                  O.map(
+                    task => taskRepository.update(task, { ...task, description: updatedDescription })),
+                )),
+                RTE.fromTaskEither
+              ),
+            ),
+          )(impl),
+        ),
+      )();
+    })
   });
 });
 
