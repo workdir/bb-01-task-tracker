@@ -67,14 +67,7 @@ const semigroupTask = Sem.struct<Task>({
   updatedAt: Sem.last<O.Option<Date>>(),
 });
 
-// cosnt taskMonoid: M.struct<Task>({
-//})
-
-// What information need to be computed
-// finding a task amoung others
-// How to model update process
-// How to model deletion process
-
+// COLLECTIONS
 export const findById = (id: TaskId) =>
   A.findFirst<Task>((task) => task.id === id);
 export const deleteById = (id: TaskId) =>

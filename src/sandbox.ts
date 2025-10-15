@@ -21,6 +21,7 @@ import * as RA from "fp-ts/ReadonlyArray";
 import * as Semigroup from "fp-ts/Semigroup";
 import * as Sem from "fp-ts/Semigroup";
 import * as S from "fp-ts/string";
+import * as TE from "fp-ts/TaskEither";
 import * as t from "io-ts";
 import { PathReporter } from "io-ts/PathReporter";
 import { Config } from "@/config";
@@ -28,7 +29,6 @@ import { Filesystem } from "@/fs";
 import { Logger } from "@/logger";
 import { makeTask, Task } from "@/schema.compound";
 import { Description, Priority, Status } from "@/schema.simple";
-import * as TE from 'fp-ts/TaskEither'
 
 interface Judge {
   name: string;
@@ -67,9 +67,9 @@ console.log({
 const findByName = (name: string) =>
   A.findFirst<Judge>((judge) => judge.name === name);
 
-const s = A.getSemigroup<Judge>()
+const s = A.getSemigroup<Judge>();
 
-const task = TE.of('buy a bitcoin')
-const optionTask = O.of(task)
+const task = TE.of("buy a bitcoin");
+const optionTask = O.of(task);
 
-const as = O.sequence(TE.ApplicativeSeq)(optionTask)
+const as = O.sequence(TE.ApplicativeSeq)(optionTask);

@@ -1,3 +1,4 @@
+import * as O from "fp-ts/Option";
 import * as t from "io-ts";
 import { date, option } from "io-ts-types";
 import { Description, Priority, Status, TaskId } from "@/schema.simple";
@@ -13,5 +14,16 @@ export const Task = t.type({
 });
 
 export type Task = t.TypeOf<typeof Task>;
-export const makeTask = unsafeMake(Task);
+export type TaskEncoded = t.OutputOf<typeof Task>;
 export const makeTasks = unsafeMake(t.array(Task));
+export const makeTask = (
+  task: Pick<TaskEncoded, "description" | "id"> &
+    Partial<Omit<TaskEncoded, "description" | "id">>,
+) =>
+  unsafeMake(Task)({
+    createdAt: new Date(),
+    updatedAt: O.none,
+    priority: "low",
+    status: "todo",
+    ...task,
+  });

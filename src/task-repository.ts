@@ -93,17 +93,7 @@ export const FilesystemTaskRepository = pipe(
           TE.Do,
           TE.bind("tasks", this.getAll),
           TE.let("taskId", ({ tasks }) => getTaskId(tasks)),
-          TE.let("task", ({ taskId: id }) =>
-            // has to be shorter, to versboe rigth now
-            makeTask({
-              id,
-              description,
-              status: "todo",
-              priority: "low",
-              createdAt: new Date(),
-              updatedAt: O.none,
-            }),
-          ),
+          TE.let("task", ({ taskId: id }) => makeTask({ id, description })),
           TE.flatMap(({ tasks, task }) =>
             pipe(A.append(task), apply(tasks), writeTasks, TE.as(task)),
           ),

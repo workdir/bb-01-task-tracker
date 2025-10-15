@@ -274,7 +274,7 @@ describe("TaskRepository", () => {
                         TE.as(updates),
                       );
                     }),
-                    O.sequence(TE.ApplicativeSeq)
+                    O.sequence(TE.ApplicativeSeq),
                   ),
                 ),
                 RTE.fromTaskEither,
@@ -284,18 +284,21 @@ describe("TaskRepository", () => {
         ),
       )();
 
-      expect(E.isRight(result)).toBe(true) 
+      expect(E.isRight(result)).toBe(true);
       pipe(
         result,
-        E.map(
-          task => {
-            expect(O.isSome(task)).toBe(true)
-            expect(pipe(task, O.map(task => {
-              expect(task.description).toBe(updatedDescription)
-            })))
-          }
-        )
-      )
+        E.map((task) => {
+          expect(O.isSome(task)).toBe(true);
+          expect(
+            pipe(
+              task,
+              O.map((task) => {
+                expect(task.description).toBe(updatedDescription);
+              }),
+            ),
+          );
+        }),
+      );
     });
   });
 });
