@@ -3,6 +3,7 @@ import * as t from "io-ts";
 import { date, option } from "io-ts-types";
 import { Description, Priority, Status, TaskId } from "@/schema.simple";
 import { unsafeMake } from "@/utils/schema";
+import * as R from 'fp-ts/Record'
 
 export const Task = t.type({
   id: TaskId,

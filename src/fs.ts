@@ -5,7 +5,7 @@ import * as TE from "fp-ts/TaskEither";
 
 export class FilesystemError extends Error {
   _tag = "FilesystemError";
-  constructor(message?: string, options?: ErrorOptions) {
+  constructor(message = "FilesystemError default" , options?: ErrorOptions) {
     super(message, options);
   }
 }
@@ -14,12 +14,12 @@ export const Filesystem = {
   readFile: (path: string) =>
     TE.tryCatch(
       () => fs.readFile(path, "utf-8"),
-      flow(E.toError, (e) => new FilesystemError(e.message, { cause: e })),
+      flow(E.toError, (error) => new FilesystemError(error.message, { cause: error })),
     ),
   writeFile: (path: string, content: string) =>
     TE.tryCatch(
       () => fs.writeFile(path, content, "utf-8"),
-      flow(E.toError, (e) => new FilesystemError(e.message, { cause: e })),
+      flow(E.toError, (error) => new FilesystemError(error.message, { cause: error })),
     ),
 };
 

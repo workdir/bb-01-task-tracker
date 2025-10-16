@@ -5,7 +5,9 @@ import { makeDescription } from "schema.simple";
 import { Default } from "@/default";
 import { makeTask } from "@/schema.compound";
 import { TaskFromJson, TasksFromJson } from "@/schema.dto";
-import type { TaskRepository } from "@/task-repository";
+import { type TaskRepository, FilesystemTaskRepository } from "@/task-repository";
+import { Filesystem } from '@/fs'
+import * as Sem from 'fp-ts/Semigroup'
 
 // create
 // update
@@ -13,11 +15,17 @@ import type { TaskRepository } from "@/task-repository";
 // getAll
 // getById
 
+interface Printer {
+  printer: {
+    print: string
+  }
+}
+
 const Consumer = pipe(
   RTE.Do,
-  RTE.bindW("taskRepository", () => RTE.ask<TaskRepository>()),
   RTE.bind("default", () => RTE.fromEither(Default)),
-  RTE.map(({ taskRepository: { taskRepository }, default: { logger } }) => {
+  RTE.bindW("deps", () => RTE.ask<TaskRepository & Printer>()),
+  RTE.map(({ deps: { taskRepository, printer }, default: { logger } }) => {
     pipe(
       taskRepository.create(makeDescription("buy solana")),
       TE.tapIO(flow(TaskFromJson.encode, JSON.stringify, logger.info)),
@@ -34,3 +42,5 @@ const Consumer = pipe(
     );
   }),
 );
+
+

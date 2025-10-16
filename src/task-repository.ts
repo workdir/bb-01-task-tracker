@@ -26,16 +26,11 @@ export class TaskRepositoryError extends Error {
   }
 }
 
-const askForFilesystem = flow(
-  RTE.ask<Filesystem>,
-  RTE.map((filesystem) => filesystem.filesystem),
-);
-
 export const FilesystemTaskRepository = pipe(
   RTE.Do,
   RTE.bind("default", () => RTE.fromEither(Default)),
-  RTE.bindW("filesystem", askForFilesystem),
-  RTE.map(({ default: { config, logger }, filesystem }) => {
+  RTE.bindW("deps", () => RTE.ask<Filesystem>()),
+  RTE.map(({ default: { config, logger }, deps: { filesystem } }) => {
     const writeTasks = flow(
       encodeToJson(TasksFromJson),
       TE.fromEither,
@@ -99,7 +94,7 @@ export const FilesystemTaskRepository = pipe(
           ),
           TE.mapLeft((error) => {
             return Array.isArray(error)
-              ? new TaskRepositoryError(stringifyValidationErrors(error))
+              ? new TaskRepositoryError(stringifyValidationErrors(error), { cause: error })
               : new TaskRepositoryError(error.message, { cause: error });
           }),
         );
