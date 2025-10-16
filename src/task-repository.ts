@@ -70,7 +70,7 @@ export const FilesystemTaskRepository = pipe(
         return pipe(
           readTasks,
           TE.orElse(ensureFileWithDefault),
-          TE.tapError((error) => pipe(logger.error(String(error)), TE.fromIO)),
+          TE.tapError((error) => pipe(logger.error(error.toString()), TE.fromIO)),
           TE.mapLeft((error) => {
             return Array.isArray(error)
               ? new TaskRepositoryError(stringifyValidationErrors(error))

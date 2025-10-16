@@ -56,8 +56,7 @@ const taskOrd = TaskOrdMonoid.concat(byPriority, byStatus);
 const sortA = A.sort(taskOrd);
 const sortB = A.sortBy<Task>([byPriority, byStatus]);
 
-// MERGING/CONCATENATION STRATEGRY
-
+// MERGING STRATEGRY
 const semigroupTask = Sem.struct<Task>({
   id: Sem.first<TaskId>(),
   description: Sem.last<Description>(),
