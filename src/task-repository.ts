@@ -29,7 +29,7 @@ export class TaskRepositoryError extends Error {
 export const FilesystemTaskRepository = pipe(
   RTE.Do,
   RTE.bind("default", () => RTE.fromEither(Default)),
-  RTE.bindW("deps", () => RTE.ask<Filesystem>()),
+  RTE.bindW("deps", RTE.ask<Filesystem>),
   RTE.map(({ default: { config, logger }, deps: { filesystem } }) => {
     const writeTasks = flow(
       encodeToJson(TasksFromJson),
