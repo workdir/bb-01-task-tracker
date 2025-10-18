@@ -7,7 +7,6 @@ import { Task } from '@/schema.compound'
 import type { TaskRepository } from "@/task-repository";
 import type { ReaderResult } from "@/utils/types";
 import {  } from '@/task.algebra'
-import { Filesystem } from '@/fs'
 
 export type TaskService = ReaderResult<typeof TaskService> 
 

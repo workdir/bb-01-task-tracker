@@ -4,15 +4,14 @@ import * as O from "fp-ts/Option";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as TE from "fp-ts/TaskEither";
 import { Default } from "@/default";
-import type { Filesystem } from "@/fs";
-import { FilesystemError } from "@/fs";
+import { type Filesystem, FilesystemError, isPathNotFoundError } from "@/fs";
 import { stringifyValidationErrors } from "@/PathReporter";
 import { makeTask, makeTasks, type Task } from "@/schema.compound";
 import { TasksFromJson } from "@/schema.dto";
 import type { Description, TaskId } from "@/schema.simple";
 import * as Alg from "@/task.algebra";
 import { decodeFromJson, encodeToJson } from "@/utils/json";
-import type { ReaderResult } from "@/utils/types";
+import { type ReaderResult } from "@/utils/types";
 
 export type TaskRepository = ReaderResult<typeof FilesystemTaskRepository>;
 
@@ -42,23 +41,6 @@ export const FilesystemTaskRepository = pipe(
       TE.flatMap(flow(decodeFromJson(TasksFromJson), TE.fromEither)),
     );
 
-    const ensureFileWithDefault = flow(
-      TE.fromPredicate(
-        // it has to check for file Not found errors, current condition does not reflect given requirement.
-        <E>(error: E) => error instanceof FilesystemError,
-        identity,
-      ),
-      TE.flatMap(() =>
-        pipe(
-          TE.Do,
-          TE.let("initTasks", () => makeTasks([])),
-          TE.flatMap(({ initTasks }) =>
-            pipe(writeTasks(initTasks), TE.as(initTasks)),
-          ),
-        ),
-      ),
-    );
-
     const getTaskId = flow(
       A.last<Task>,
       O.map((task) => task.id + 1),
@@ -69,7 +51,25 @@ export const FilesystemTaskRepository = pipe(
       getAll() {
         return pipe(
           readTasks,
-          TE.orElse(ensureFileWithDefault),
+          TE.orElse(
+            // ensureFileWithDefault
+            flow(
+              TE.fromPredicate(
+                (error) => error instanceof FilesystemError && isPathNotFoundError(error.cause),
+                identity
+              ),
+              TE.flatMap(() =>
+                pipe(
+                  TE.Do,
+                  TE.let("initTasks", () => makeTasks([])),
+                  TE.flatMap(({ initTasks }) =>
+                    pipe(writeTasks(initTasks), TE.as(initTasks)),
+                  ),
+                ),
+              )
+            )
+          ),
+          TE.tapIO((tasks) => logger.info(JSON.stringify(TasksFromJson.encode(tasks)))),
           TE.tapError((error) => pipe(logger.error(error.toString()), TE.fromIO)),
           TE.mapLeft((error) => {
             return Array.isArray(error)

@@ -13,3 +13,4 @@ export type EitherResult<T> = T extends E.Either<never, infer Value>
   ? Value
   : never;
 
+
