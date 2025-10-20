@@ -34,10 +34,10 @@ const statusLookup = (status: Status) => {
   return statusMap[status] ?? -1;
 };
 
-const byPriority = Ord.contramap<number, Task>((task) =>
+export const byPriority = Ord.contramap<number, Task>((task) =>
   priorityLookup(task.priority),
 )(N.Ord);
-const byStatus = Ord.contramap<number, Task>((task) =>
+export const byStatus = Ord.contramap<number, Task>((task) =>
   statusLookup(task.status),
 )(N.Ord);
 const byCreationDate = Ord.contramap<Date, Task>((task) => task.createdAt)(
