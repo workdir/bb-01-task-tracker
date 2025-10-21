@@ -65,13 +65,13 @@ export const TaskService = pipe(
       );
     },
     update: (task: Task, newTask: Task) => {
-      pipe(
+      return pipe(
         taskRepository.update(task, newTask),
         TE.mapLeft((e) => new TaskServiceError(e.message, { cause: e })),
       );
     },
     delete: (taskId: TaskId) => {
-      pipe(
+      return pipe(
         taskRepository.delete(taskId),
         TE.mapLeft((e) => new TaskServiceError(e.message, { cause: e })),
       );

@@ -12,5 +12,3 @@ export type ReaderResult<T> = T extends RTE.ReaderTaskEither<
 export type EitherResult<T> = T extends E.Either<never, infer Value>
   ? Value
   : never;
-
-

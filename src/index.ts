@@ -14,10 +14,11 @@ const app = pipe(
       TE.map((args) => {
         const [command] = args;
         switch (command) {
-          case "add": 
-            const x = args[0]
-            const y = args[1]
+          case "add": {
+            const x = args[0];
+            const y = args[1];
             break;
+          }
           case "update":
             break;
           case "delete":

@@ -11,7 +11,7 @@ import { TasksFromJson } from "@/schema.dto";
 import type { Description, TaskId } from "@/schema.simple";
 import * as Alg from "@/task.algebra";
 import { decodeFromJson, encodeToJson } from "@/utils/json";
-import { type ReaderResult } from "@/utils/types";
+import type { ReaderResult } from "@/utils/types";
 
 export type TaskRepository = ReaderResult<typeof FilesystemTaskRepository>;
 
@@ -55,8 +55,10 @@ export const FilesystemTaskRepository = pipe(
             // ensureFileWithDefault
             flow(
               TE.fromPredicate(
-                (error) => error instanceof FilesystemError && isPathNotFoundError(error.cause),
-                identity
+                (error) =>
+                  error instanceof FilesystemError &&
+                  isPathNotFoundError(error.cause),
+                identity,
               ),
               TE.flatMap(() =>
                 pipe(
@@ -66,11 +68,15 @@ export const FilesystemTaskRepository = pipe(
                     pipe(writeTasks(initTasks), TE.as(initTasks)),
                   ),
                 ),
-              )
-            )
+              ),
+            ),
           ),
-          TE.tapIO((tasks) => logger.info(JSON.stringify(TasksFromJson.encode(tasks)))),
-          TE.tapError((error) => pipe(logger.error(error.toString()), TE.fromIO)),
+          TE.tapIO((tasks) =>
+            logger.info(`Tasks read successfully! ${JSON.stringify(TasksFromJson.encode(tasks))}`),
+          ),
+          TE.tapError((error) =>
+            pipe(logger.error(error.toString()), TE.fromIO),
+          ),
           TE.mapLeft((error) => {
             return Array.isArray(error)
               ? new TaskRepositoryError(stringifyValidationErrors(error))
@@ -80,7 +86,18 @@ export const FilesystemTaskRepository = pipe(
       },
 
       getById(id: TaskId) {
-        return pipe(this.getAll(), TE.map(Alg.findById(id)));
+        return pipe(
+          this.getAll(),
+          TE.map(Alg.findById(id)),
+          TE.tapIO(
+            flow(
+              O.match(
+                () => logger.error("No Task found for given ID"),
+                (task) => logger.info(`task of id: ${task.id} has been found`),
+              ),
+            ),
+          ),
+        );
       },
 
       create(description: Description) {
@@ -94,7 +111,9 @@ export const FilesystemTaskRepository = pipe(
           ),
           TE.mapLeft((error) => {
             return Array.isArray(error)
-              ? new TaskRepositoryError(stringifyValidationErrors(error), { cause: error })
+              ? new TaskRepositoryError(stringifyValidationErrors(error), {
+                  cause: error,
+                })
               : new TaskRepositoryError(error.message, { cause: error });
           }),
         );
@@ -103,8 +122,10 @@ export const FilesystemTaskRepository = pipe(
       update(task: Task, updates: Task) {
         return pipe(
           this.getAll(),
+          TE.tapIO(() => logger.debug('I`m working until now')),
           TE.map(Alg.replace(task, Alg.update(task, updates))),
           TE.flatMap(writeTasks),
+          TE.tapIO(() => logger.info(`task of given id: ${task.id} updated succesfully`)),
           TE.mapLeft((error) => {
             return Array.isArray(error)
               ? new TaskRepositoryError(stringifyValidationErrors(error))
