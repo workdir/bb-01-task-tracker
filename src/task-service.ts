@@ -10,7 +10,7 @@ import type { ReaderResult } from "@/utils/types";
 import {  } from '@/task.algebra'
 import * as O from 'fp-ts/Option'
 import * as Alg from 'task.algebra' 
-import * as RA from 'fp-ts/ReadonlyArray'
+import * as A from 'fp-ts/Array'
 import * as R from 'fp-ts/Record'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import * as E from 'fp-ts/Either'
@@ -43,8 +43,8 @@ export const TaskService = pipe(
   RTE.bind("deps", RTE.ask<TaskRepository> ),
   RTE.map(({ deps: { taskRepository } }) => ({
     getAll: (options: Options) => {
-      const filter = RA.filter(options.where)
-      const sort = RA.sort(options.orderBy)
+      const filter = A.filter(options.where)
+      const sort = A.sort(options.orderBy)
 
       return pipe(
         taskRepository.getAll(),
