@@ -22,6 +22,12 @@ export type Description = t.TypeOf<typeof Description>;
 
 export const makeDescription = unsafeMake(Description);
 
+export enum Stat {
+  Todo = 1,
+  InProgress = 2,
+  Done = 3
+}
+
 export const Status = t.keyof({
   todo: null,
   "in-progress": null,

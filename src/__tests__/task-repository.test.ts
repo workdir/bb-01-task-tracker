@@ -1,4 +1,3 @@
-import * as fs from "node:fs/promises";
 import * as A from "fp-ts/Array";
 import * as E from "fp-ts/Either";
 import { flow, pipe } from "fp-ts/function";
