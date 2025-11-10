@@ -235,7 +235,7 @@ describe("TaskRepository", () => {
       );
     });
 
-    test("Task Deletion over non existant Id have no effect", async () => {
+    test("Task Deletion over non existant Id throws", async () => {
       const result = await pipe(
         TE.Do,
         TE.bind("impl", () => InMemoryTaskRepository),
@@ -249,7 +249,15 @@ describe("TaskRepository", () => {
         ),
       )();
 
-      expect(E.isRight(result)).toBe(true);
+      expect(E.isLeft(result)).toBe(true);
+      expect(
+        pipe(
+          result,
+          E.mapLeft((error) =>
+            expect(error.message).toContain("Cannot delete nonexistant task"),
+          ),
+        ),
+      );
     });
 
     test("Task Modification", async () => {

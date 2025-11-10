@@ -2,7 +2,7 @@ import * as A from "fp-ts/Array";
 import { pipe } from "fp-ts/function";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as TE from "fp-ts/TaskEither";
-import { Commands } from "./schema";
+import { Commands } from "./schema.compound";
 
 const app = pipe(
   RTE.Do,

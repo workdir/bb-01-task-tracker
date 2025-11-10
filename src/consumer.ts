@@ -9,24 +9,13 @@ import * as RA from "fp-ts/ReadonlyArray";
 import * as R from "fp-ts/Record";
 import * as TE from "fp-ts/TaskEither";
 import type * as t from "io-ts";
-import {
-  type Description,
-  makeDescription,
-  makeTaskId,
-  type Priority,
-  type Status,
-  type TaskId,
-} from "schema.simple";
+import type { Description, Priority, Status, TaskId } from "schema.simple";
 import { Default } from "@/default";
 import { Filesystem } from "@/fs";
-import { makeTask, type Task } from "@/schema.compound";
+import type { Task } from "@/schema.compound";
 import { TaskFromJson, TasksFromJson } from "@/schema.dto";
 import * as Alg from "@/task.algebra";
-import {
-  FilesystemTaskRepository,
-  type TaskRepository,
-} from "@/task-repository";
-import { encodeToJson } from "@/utils/json";
+import { FilesystemTaskRepository } from "@/task-repository";
 import { TaskService } from "./task-service";
 
 type OrdKeys = Extract<keyof Task, "priority" | "status">;
@@ -128,7 +117,7 @@ const Consumer = pipe(
       M.concatAll(Ord.getMonoid<Task>()),
     );
 
-    const getAllFiltered =  pipe(
+    const getAllFiltered = pipe(
       taskService.getAll({
         where,
         orderBy,

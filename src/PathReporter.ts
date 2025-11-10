@@ -3,12 +3,12 @@ import * as RA from "fp-ts/ReadonlyArray";
 import * as S from "fp-ts/string";
 import * as t from "io-ts";
 
-const stringify = (v: any) => {
+const stringify = (v: unknown) => {
   if (typeof v === "function") {
     return t.getFunctionName(v);
   }
-  if (typeof v === "number" && !isFinite(v)) {
-    if (isNaN(v)) {
+  if (typeof v === "number" && !Number.isFinite(v)) {
+    if (Number.isNaN(v)) {
       return "NaN";
     }
     return v > 0 ? "Infinity" : "-Infinity";

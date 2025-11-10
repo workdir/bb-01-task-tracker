@@ -24,7 +24,7 @@ export const makeDescription = unsafeMake(Description);
 
 export const Status = t.keyof({
   todo: null,
-  ["in-progress"]: null,
+  "in-progress": null,
   done: null,
 });
 export type Status = t.TypeOf<typeof Status>;

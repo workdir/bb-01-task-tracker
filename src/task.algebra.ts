@@ -1,7 +1,6 @@
 import * as A from "fp-ts/Array";
 import * as D from "fp-ts/Date";
 import * as Eq from "fp-ts/Eq";
-import * as M from "fp-ts/Monoid";
 import * as N from "fp-ts/number";
 import * as O from "fp-ts/Option";
 import * as Ord from "fp-ts/Ord";
@@ -11,10 +10,11 @@ import type { Task } from "@/schema.compound";
 import type { Description, Priority, Status, TaskId } from "@/schema.simple";
 
 // EQUALITY STRATEGY
-// I have to make decistion on the level of domain modeling if Task is and entiry or a value object.
+
 const eqTask = Eq.contramap<number, Task>((task) => task.id)(N.Eq);
 
 // ORDERING/SORTING STRATEGY
+
 // I have doupts about schema defintion for priority, maybe it should have serverity build in.
 const priorityLookup = (priority: Priority) => {
   const priorityMap: Record<Priority, number> = {
@@ -24,6 +24,7 @@ const priorityLookup = (priority: Priority) => {
   };
   return priorityMap[priority] ?? -1;
 };
+
 // same about status
 const statusLookup = (status: Status) => {
   const statusMap: Record<Status, number> = {

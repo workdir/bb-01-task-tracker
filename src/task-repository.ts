@@ -41,7 +41,7 @@ export const FilesystemTaskRepository = pipe(
       TE.flatMap(flow(decodeFromJson(TasksFromJson), TE.fromEither)),
     );
 
-    const getTaskId = flow(
+    const nextTaskId = flow(
       A.last<Task>,
       O.map((task) => task.id + 1),
       O.getOrElse(() => 0),
@@ -72,7 +72,9 @@ export const FilesystemTaskRepository = pipe(
             ),
           ),
           TE.tapIO((tasks) =>
-            logger.info(`Tasks read successfully! ${JSON.stringify(TasksFromJson.encode(tasks))}`),
+            logger.info(
+              `Task Repository: tasks loaded successfully! ${JSON.stringify(TasksFromJson.encode(tasks))}`,
+            ),
           ),
           TE.tapError((error) =>
             pipe(logger.error(error.toString()), TE.fromIO),
@@ -92,7 +94,7 @@ export const FilesystemTaskRepository = pipe(
           TE.tapIO(
             flow(
               O.match(
-                () => logger.error("No Task found for given ID"),
+                () => logger.error(`No Task found for given id: ${id}`),
                 (task) => logger.info(`task of id: ${task.id} has been found`),
               ),
             ),
@@ -104,7 +106,7 @@ export const FilesystemTaskRepository = pipe(
         return pipe(
           TE.Do,
           TE.bind("tasks", this.getAll),
-          TE.let("taskId", ({ tasks }) => getTaskId(tasks)),
+          TE.let("taskId", ({ tasks }) => nextTaskId(tasks)),
           TE.let("task", ({ taskId: id }) => makeTask({ id, description })),
           TE.flatMap(({ tasks, task }) =>
             pipe(A.append(task), apply(tasks), writeTasks, TE.as(task)),
@@ -119,13 +121,16 @@ export const FilesystemTaskRepository = pipe(
         );
       },
 
+      // not saysfied
       update(task: Task, updates: Task) {
         return pipe(
           this.getAll(),
-          TE.tapIO(() => logger.debug('I`m working until now')),
+          TE.tapIO(() => logger.debug("I`m working until now")),
           TE.map(Alg.replace(task, Alg.update(task, updates))),
           TE.flatMap(writeTasks),
-          TE.tapIO(() => logger.info(`task of given id: ${task.id} updated succesfully`)),
+          TE.tapIO(() =>
+            logger.info(`task of given id: ${task.id} updated succesfully`),
+          ),
           TE.mapLeft((error) => {
             return Array.isArray(error)
               ? new TaskRepositoryError(stringifyValidationErrors(error))
@@ -136,7 +141,21 @@ export const FilesystemTaskRepository = pipe(
 
       delete(taskId: TaskId) {
         return pipe(
-          this.getAll(),
+          TE.Do,
+          TE.bind("throwForNonexistantIds", () =>
+            pipe(
+              this.getById(taskId),
+              TE.flatMap(
+                TE.fromOption(
+                  () =>
+                    new Error(
+                      `Cannot delete nonexistant task by ID: ${taskId}`,
+                    ),
+                ),
+              ),
+            ),
+          ),
+          TE.flatMap(this.getAll),
           TE.map(Alg.deleteById(taskId)),
           TE.flatMap(writeTasks),
           TE.mapLeft((error) => {
