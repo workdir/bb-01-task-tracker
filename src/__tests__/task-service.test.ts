@@ -9,9 +9,7 @@ import { TaskService } from '@/task-service'
 import { FilesystemTaskRepository } from '@/task-repository'
 import { makeTask, Task } from '@/schema.compound'
 import { makeDescription, makeTaskId } from '@/schema.simple'
-import * as A from 'fp-ts/Array'
 import { TaskFromJson, TasksFromJson } from '@/schema.dto'
-import * as O from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
 
 describe("TaskService", () => {

@@ -3,6 +3,7 @@ import { pipe } from "fp-ts/function";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as TE from "fp-ts/TaskEither";
 import { Commands } from "./schema.compound";
+import { stringifyValidationErrors } from '@/PathReporter'
 
 const app = pipe(
   RTE.Do,
@@ -35,3 +36,5 @@ const app = pipe(
     );
   }),
 );
+
+app(1)
