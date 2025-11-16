@@ -41,7 +41,7 @@ export const byPriority = Ord.contramap<number, Task>((task) =>
 export const byStatus = Ord.contramap<number, Task>((task) =>
   statusLookup(task.status),
 )(N.Ord);
-const byCreationDate = Ord.contramap<Date, Task>((task) => task.createdAt)(
+/*const byCreationDate = Ord.contramap<Date, Task>((task) => task.createdAt)(
   D.Ord,
 );
 const byUpdateDate = Ord.contramap<O.Option<Date>, Task>(
@@ -56,6 +56,7 @@ const TaskOrdMonoid = Ord.getMonoid<Task>();
 const taskOrd = TaskOrdMonoid.concat(byPriority, byStatus);
 const sortA = A.sort(taskOrd);
 const sortB = A.sortBy<Task>([byPriority, byStatus]);
+*/
 
 // MERGING STRATEGRY
 const semigroupTask = Sem.struct<Task>({

@@ -27,7 +27,7 @@ export class TaskRepositoryError extends Error {
 
 export const FilesystemTaskRepository = pipe(
   RTE.Do,
-  RTE.bind("default", () => RTE.fromEither(Default)),
+  RTE.bindW("default", () => RTE.fromEither(Default)),
   RTE.bindW("deps", RTE.ask<Filesystem>),
   RTE.map(({ default: { config, logger }, deps: { filesystem } }) => {
     const writeTasks = flow(
@@ -71,19 +71,19 @@ export const FilesystemTaskRepository = pipe(
               ),
             ),
           ),
-          TE.tapIO((tasks) =>
+          TE.mapLeft((error) => {
+            return Array.isArray(error)
+              ? new TaskRepositoryError(stringifyValidationErrors(error))
+              : new TaskRepositoryError(error.message, { cause: error });
+          }),
+          /*TE.tapIO((tasks) =>
             logger.info(
               `Task Repository: tasks loaded successfully! ${JSON.stringify(TasksFromJson.encode(tasks))}`,
             ),
           ),
           TE.tapError((error) =>
             pipe(logger.error(error.toString()), TE.fromIO),
-          ),
-          TE.mapLeft((error) => {
-            return Array.isArray(error)
-              ? new TaskRepositoryError(stringifyValidationErrors(error))
-              : new TaskRepositoryError(error.message, { cause: error });
-          }),
+          ),*/
         );
       },
 
@@ -91,7 +91,7 @@ export const FilesystemTaskRepository = pipe(
         return pipe(
           this.getAll(),
           TE.map(Alg.findById(id)),
-          TE.tapIO(
+          /* TE.tapIO(
             flow(
               O.match(
                 () => logger.error(`No Task found for given id: ${id}`),
@@ -99,6 +99,7 @@ export const FilesystemTaskRepository = pipe(
               ),
             ),
           ),
+          */
         );
       },
 
@@ -125,12 +126,8 @@ export const FilesystemTaskRepository = pipe(
       update(task: Task, updates: Task) {
         return pipe(
           this.getAll(),
-          TE.tapIO(() => logger.debug("I`m working until now")),
           TE.map(Alg.replace(task, Alg.update(task, updates))),
           TE.flatMap(writeTasks),
-          TE.tapIO(() =>
-            logger.info(`task of given id: ${task.id} updated succesfully`),
-          ),
           TE.mapLeft((error) => {
             return Array.isArray(error)
               ? new TaskRepositoryError(stringifyValidationErrors(error))
@@ -149,7 +146,7 @@ export const FilesystemTaskRepository = pipe(
                 TE.fromOption(
                   () =>
                     new Error(
-                      `Cannot delete nonexistant task by ID: ${taskId}`,
+                      `Cannot delete nonexistant task of ID: ${taskId}`,
                     ),
                 ),
               ),

@@ -26,7 +26,7 @@ const getContextPath = flow(
 const getMessage = (error: t.ValidationError) =>
   error.message
     ? error.message
-    : `Invalid value ${stringify(error.value)} supplied to ${getContextPath}`;
+    : `Invalid value ${stringify(error.value)} supplied to ${getContextPath(error.context)}`;
 
 export const stringifyValidationErrors = flow(
   RA.map<t.ValidationError, string>(getMessage),
