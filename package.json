@@ -25,7 +25,6 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@fp-ts/optic": "^0.25.0",
     "@herp-inc/environmen-ts": "^0.5.0",
     "fp-ts": "^2.16.11",
     "io-ts": "^2.2.22",

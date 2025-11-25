@@ -2,14 +2,13 @@ import * as A from "fp-ts/Array";
 import { pipe } from "fp-ts/function";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as TE from "fp-ts/TaskEither";
-import { Commands } from "./schema.compound";
+import { Commands, Task } from "./schema.compound";
 import { stringifyValidationErrors } from '@/PathReporter'
 import { TaskService } from '@/task-service'
 import { Default } from '@/default'
-import { Task } from '@/schema.compound'
 import { FilesystemTaskRepository } from '@/task-repository'
 import { parseJson, decodeFromJson, encodeToJson } from '@/utils/json'
-import { makeTaskId } from '@/schema.simple'
+import { makeTaskId, Description } from '@/schema.simple'
 import { Filesystem } from '@/fs'
 import * as P from 'fp-ts/Predicate'
 import * as Ord from 'fp-ts/Ord'
@@ -159,4 +158,24 @@ const run = pipe(
 )
 
 run().then(console.log).catch(console.error)
+
+
+interface Command {
+  execute: () => void
+}
+
+class AddTaskCommand implements Command {
+  private description: Description
+  // a.k.a receiver
+  private taskService: TaskService
+
+  constructor(taskService: TaskService, description: Description) {
+    this.description = description 
+    this.taskService = taskService
+  }
+
+  execute() {
+    this.taskService.taskService.create(this.description)
+  }
+}
 

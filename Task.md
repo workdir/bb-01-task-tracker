@@ -56,4 +56,12 @@ task-cli list todo
 task-cli list in-progress
 
 ```
+Command Pattern
+Command Handler
+Command Bus
+Command Dispatcher
+Dto
+Singleton Pattern
+Strategy Pattern
+Factory Method Pattern
 
